@@ -32,14 +32,14 @@ function parseEnvFile(filePath) {
   return entries;
 }
 
-export function loadScriptEnv(cwd = process.cwd()) {
+export function loadScriptEnv(cwd = process.cwd(), overwrite = true) {
   const merged = {
     ...parseEnvFile(path.join(cwd, ".env")),
     ...parseEnvFile(path.join(cwd, ".env.local"))
   };
 
   for (const [key, value] of Object.entries(merged)) {
-    if (!(key in process.env)) {
+    if (overwrite || !(key in process.env)) {
       process.env[key] = value;
     }
   }

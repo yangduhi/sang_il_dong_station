@@ -1,6 +1,6 @@
 {
-  "runId": "dashboard-postgres-etl-20260331054820",
-  "executedAt": "2026-03-31T05:48:20.459584+00:00",
+  "runId": "dashboard-postgres-etl-20260331061717",
+  "executedAt": "2026-03-31T06:17:17.479676+00:00",
   "rows": {
     "stationDaily": 13,
     "livingZoneOdDaily": 26,
@@ -13,12 +13,12 @@
     "fifteenMinute": "Optional batch. Capture only top daily zones and only tracked commute hours to stay below OD API quota."
   },
   "warnings": [
-    "Postgres materialization blocked: connection failed: connection to server at \"2406:da14:271:9912:7aa0:e900:90b3:2465\", port 5432 failed: Network is unreachable (0x00002743/10051)\n\tIs the server running on that host and accepting TCP/IP connections?"
+    "Postgres materialization blocked: connection failed: connection to server at \"18.176.230.146\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\nconnection to server at \"18.176.230.146\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\nMultiple connection attempts failed. All failures were:\n- host: 'aws-1-ap-northeast-1.pooler.supabase.com', port: '5432', hostaddr: '57.182.231.186': connection failed: connection to server at \"57.182.231.186\", port 5432 failed: FATAL:  Circuit breaker open: Too many authentication errors\nconnection to server at \"57.182.231.186\", port 5432 failed: FATAL:  Circuit breaker open: Too many authentication errors\n- host: 'aws-1-ap-northeast-1.pooler.supabase.com', port: '5432', hostaddr: '18.176.230.146': connection failed: connection to server at \"18.176.230.146\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\nconnection to server at \"18.176.230.146\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\""
   ],
   "evidencePaths": [
     "D:\\vscode\\sang_il_dong_station\\data\\verified_snapshots\\origin-to-zone.json",
     "D:\\vscode\\sang_il_dong_station\\data\\verified_snapshots\\zone-to-destination.json",
     "D:\\vscode\\sang_il_dong_station\\data\\verified_snapshots\\living-zone-15min.json"
   ],
-  "error": "connection failed: connection to server at \"2406:da14:271:9912:7aa0:e900:90b3:2465\", port 5432 failed: Network is unreachable (0x00002743/10051)\n\tIs the server running on that host and accepting TCP/IP connections?"
+  "error": "connection failed: connection to server at \"18.176.230.146\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\nconnection to server at \"18.176.230.146\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\nMultiple connection attempts failed. All failures were:\n- host: 'aws-1-ap-northeast-1.pooler.supabase.com', port: '5432', hostaddr: '57.182.231.186': connection failed: connection to server at \"57.182.231.186\", port 5432 failed: FATAL:  Circuit breaker open: Too many authentication errors\nconnection to server at \"57.182.231.186\", port 5432 failed: FATAL:  Circuit breaker open: Too many authentication errors\n- host: 'aws-1-ap-northeast-1.pooler.supabase.com', port: '5432', hostaddr: '18.176.230.146': connection failed: connection to server at \"18.176.230.146\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\nconnection to server at \"18.176.230.146\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\""
 }

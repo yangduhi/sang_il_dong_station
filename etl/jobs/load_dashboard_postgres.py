@@ -48,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     settings = get_settings()
 
-    database_url = settings.direct_database_url or settings.database_url
+    database_url = settings.database_url or settings.direct_database_url
     if not database_url:
         print("DATABASE_URL is not configured. Skipping Postgres dashboard load.")
         return 0

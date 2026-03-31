@@ -26,11 +26,12 @@ def _parse_env_file(path: Path) -> dict[str, str]:
     return parsed
 
 
-def load_local_env(repo_root: Path) -> None:
+def load_local_env(repo_root: Path, overwrite: bool = True) -> None:
     merged = {
         **_parse_env_file(repo_root / ".env"),
         **_parse_env_file(repo_root / ".env.local"),
     }
 
     for key, value in merged.items():
-        os.environ.setdefault(key, value)
+        if overwrite or key not in os.environ:
+            os.environ[key] = value
