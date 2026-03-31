@@ -24,7 +24,7 @@ async function seedZones(client) {
   for (const row of rows) {
     await client.query(
       `
-      insert into dim_zone (zone_id, zone_name, zone_group, sort_order)
+      insert into public.dim_zone (zone_id, zone_name, zone_group, sort_order)
       values ($1, $2, $3, $4)
       on conflict (zone_id) do update
       set zone_name = excluded.zone_name,
@@ -34,18 +34,16 @@ async function seedZones(client) {
       [row.zone_id, row.zone_name, row.zone_group, Number(row.sort_order)]
     );
   }
+  return rows.length;
 }
 
 async function seedStations(client) {
   await client.query(
     `
-    insert into dim_station (
+    insert into public.dim_station (
       station_id, station_name, line_name, operator_name, address, city_do, sigungu, zone_id
     )
-    values (
-      'sangil-5-551', '상일동역', '5호선', '서울교통공사', '서울특별시 강동구 상일동',
-      '서울특별시', '강동구', 'seoul-east-southeast'
-    )
+    values ($1, $2, $3, $4, $5, $6, $7, $8)
     on conflict (station_id) do update
     set station_name = excluded.station_name,
         line_name = excluded.line_name,
@@ -54,8 +52,19 @@ async function seedStations(client) {
         city_do = excluded.city_do,
         sigungu = excluded.sigungu,
         zone_id = excluded.zone_id
-    `
+    `,
+    [
+      "sangil-5-551",
+      "상일동역",
+      "5호선",
+      "서울교통공사",
+      "서울특별시 강동구 상일동",
+      "서울특별시",
+      "강동구",
+      "seoul-east-southeast"
+    ]
   );
+  return 1;
 }
 
 async function main() {
@@ -66,9 +75,10 @@ async function main() {
 
   const client = new Client(createPgConfig(process.env.DATABASE_URL));
   await client.connect();
-  await seedZones(client);
-  await seedStations(client);
+  const zoneCount = await seedZones(client);
+  const stationCount = await seedStations(client);
   await client.end();
+  console.log(`Seeded ${zoneCount} zone mappings and ${stationCount} station row.`);
 }
 
 main().catch((error) => {
