@@ -63,44 +63,7 @@ export function DashboardShell({
           </div>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)_320px]">
-          <aside className="space-y-6">
-            <SectionCard
-              eyebrow="Mode"
-              title="작동 원리"
-              subtitle="역 기반과 생활권 기반이 한 화면에 섞일 때의 해석 기준을 먼저 고정합니다."
-            >
-              <div className="space-y-4 text-sm leading-7 text-slate-300">
-                <p>
-                  `상일동역 승하차`는 서울 공개 API에서 확인한 역 단위 데이터입니다. `생활권 OD`는
-                  공개 OD API를 상일동(읍면동) 기준으로 재집계한 대중교통 흐름입니다.
-                </p>
-                <div className="grid gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/18 p-4">
-                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">현재 라우팅</p>
-                    <p className="mt-2 text-base font-semibold text-white">지도는 생활권, 차트는 역 중심</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/18 p-4">
-                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">권역 기준</p>
-                    <p className="mt-2 text-base font-semibold text-white">서울 6 + 경기 7 분석 권역</p>
-                  </div>
-                </div>
-              </div>
-            </SectionCard>
-
-            <SectionCard
-              eyebrow="Filters"
-              title="표현 레벨"
-              subtitle="이번 버전은 정보 구조와 공간 감각을 우선하고, 과한 효과는 단계적으로 추가합니다."
-            >
-              <ul className="space-y-3 text-sm text-slate-300">
-                <li>- 기본 맵은 권역 레벨 choropleth + flow overlay 입니다.</li>
-                <li>- 대표 생활권 라벨은 각 권역에서 통행량이 가장 큰 읍면동 기준입니다.</li>
-                <li>- 시간대 패턴은 추후 15분 OD 모드 전환으로 확장 가능합니다.</li>
-              </ul>
-            </SectionCard>
-          </aside>
-
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <ZoneFlowMap
             title="상일동 생활권 OD 맵"
             subtitle="생활권 중심의 대중교통 흐름을 권역 레벨로 단순화해, 공간 관계가 먼저 읽히도록 설계했습니다."
@@ -124,6 +87,18 @@ export function DashboardShell({
               subtitle="외부 권역에서 상일동 생활권으로 유입되는 흐름입니다."
             >
               <OdBarChart rows={zoneToDestination.data.rows.slice(0, 6)} directionLabel="zone-to-destination-side" />
+            </SectionCard>
+
+            <SectionCard
+              eyebrow="Layers"
+              title="표현 메모"
+              subtitle="첫 화면은 맵 중심으로 읽히고, 해석 문장은 오른쪽 레일에서 바로 따라옵니다."
+            >
+              <ul className="space-y-3 text-sm text-slate-300">
+                <li>- 권역 색상은 선택한 모드의 상대적 강도를 뜻합니다.</li>
+                <li>- 흐름선은 생활권과 권역 centroid를 잇는 개념도입니다.</li>
+                <li>- 15분 OD와 히트맵은 다음 단계에서 맵 모드 전환으로 확장할 수 있습니다.</li>
+              </ul>
             </SectionCard>
           </aside>
         </div>
