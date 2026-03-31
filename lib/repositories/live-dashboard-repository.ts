@@ -15,6 +15,10 @@ import {
   fetchLiveRidershipOverview,
   fetchLiveZoneToDestination
 } from "@/lib/data/live-transport";
+import {
+  verifiedLiveOriginToZoneSnapshot,
+  verifiedLiveZoneToDestinationSnapshot
+} from "@/lib/data/live-snapshot";
 import { sampleHealth, sampleStations, sampleZones } from "@/lib/data/sample-dashboard";
 
 export class LiveDashboardRepository implements DashboardRepository {
@@ -63,18 +67,20 @@ export class LiveDashboardRepository implements DashboardRepository {
   async getOriginToZone(query: Record<string, unknown>): Promise<OdOriginToZoneResponse> {
     void query;
     try {
-      return await fetchLiveOriginToZone();
+      const response = await fetchLiveOriginToZone();
+      return response.data.rows.length ? response : verifiedLiveOriginToZoneSnapshot;
     } catch {
-      return this.fallbackRepository.getOriginToZone(query);
+      return verifiedLiveOriginToZoneSnapshot;
     }
   }
 
   async getZoneToDestination(query: Record<string, unknown>): Promise<OdZoneToDestinationResponse> {
     void query;
     try {
-      return await fetchLiveZoneToDestination();
+      const response = await fetchLiveZoneToDestination();
+      return response.data.rows.length ? response : verifiedLiveZoneToDestinationSnapshot;
     } catch {
-      return this.fallbackRepository.getZoneToDestination(query);
+      return verifiedLiveZoneToDestinationSnapshot;
     }
   }
 

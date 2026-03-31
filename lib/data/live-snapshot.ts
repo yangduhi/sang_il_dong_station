@@ -1,0 +1,91 @@
+import type {
+  OdOriginToZoneResponse,
+  OdZoneToDestinationResponse
+} from "@/lib/schemas/responses";
+import { sangilLivingZone, sangilStation } from "@/lib/data/analysis-config";
+
+const liveSnapshotMetaBase = {
+  sourceNames: [
+    "verified-live-snapshot",
+    "getDailyODUsageforGeneralBusesandUrbanRailways"
+  ] as string[],
+  grainLabel: "emd_based_public_transit_od",
+  lastLoadedAt: "20250301",
+  dateRange: {
+    from: "2025-03-01",
+    to: "2025-03-01"
+  },
+  limitations: [
+    "공개 OD API는 상일동역 역-역 이동이 아니라 상일동(읍면동) 생활권 기준 대중교통 OD입니다.",
+    "현재 런타임 source가 빈 row를 반환할 경우, 로컬에서 검증된 실제 live 스냅샷을 fallback으로 사용합니다."
+  ] as string[],
+  fallbackUsed: true
+};
+
+export const verifiedLiveOriginToZoneSnapshot: OdOriginToZoneResponse = {
+  data: {
+    station: sangilStation,
+    analysisScope: sangilLivingZone,
+    dateRange: {
+      from: "2025-03-01",
+      to: "2025-03-01"
+    },
+    rows: [
+      { zoneName: "강동·송파", passengerCount: 6740, sharePct: 46.9, topContextLabel: "강동구 강일동" },
+      { zoneName: "도심(종로·중구·용산)", passengerCount: 1854, sharePct: 12.9, topContextLabel: "종로구 세종로" },
+      { zoneName: "동북", passengerCount: 1712, sharePct: 11.9, topContextLabel: "광진구 구의동" },
+      { zoneName: "하남·구리·남양주", passengerCount: 1702, sharePct: 11.9, topContextLabel: "하남시 망월동" },
+      { zoneName: "강남·서초", passengerCount: 985, sharePct: 6.9, topContextLabel: "강남구 역삼동" },
+      { zoneName: "서남", passengerCount: 729, sharePct: 5.1, topContextLabel: "영등포구 여의도동" },
+      { zoneName: "서북", passengerCount: 427, sharePct: 3.0, topContextLabel: "마포구 동교동" },
+      { zoneName: "성남·광주·이천·여주·양평", passengerCount: 128, sharePct: 0.9, topContextLabel: "광주시 송정동" },
+      { zoneName: "안양·군포·의왕·과천·광명·부천", passengerCount: 27, sharePct: 0.2, topContextLabel: "과천시 과천동" },
+      { zoneName: "용인·수원·화성·오산·평택·안성", passengerCount: 20, sharePct: 0.1, topContextLabel: "화성시 오산동" },
+      { zoneName: "고양·파주·김포", passengerCount: 18, sharePct: 0.1, topContextLabel: "파주시 금촌동" },
+      { zoneName: "의정부·양주·동두천·포천·연천·가평", passengerCount: 11, sharePct: 0.1, topContextLabel: "가평군 청평면" },
+      { zoneName: "시흥·안산", passengerCount: 3, sharePct: 0.0, topContextLabel: "시흥시 정왕동" }
+    ]
+  },
+  meta: {
+    ...liveSnapshotMetaBase,
+    queryEcho: {
+      direction: "outbound",
+      focusArea: "서울특별시 강동구 상일동",
+      fallbackReason: "empty_live_rows"
+    }
+  }
+};
+
+export const verifiedLiveZoneToDestinationSnapshot: OdZoneToDestinationResponse = {
+  data: {
+    station: sangilStation,
+    analysisScope: sangilLivingZone,
+    dateRange: {
+      from: "2025-03-01",
+      to: "2025-03-01"
+    },
+    rows: [
+      { zoneName: "강동·송파", passengerCount: 7348, sharePct: 49.7, topContextLabel: "강동구 명일동" },
+      { zoneName: "도심(종로·중구·용산)", passengerCount: 1748, sharePct: 11.8, topContextLabel: "종로구 세종로" },
+      { zoneName: "동북", passengerCount: 1612, sharePct: 10.9, topContextLabel: "광진구 구의동" },
+      { zoneName: "하남·구리·남양주", passengerCount: 1498, sharePct: 10.1, topContextLabel: "하남시 망월동" },
+      { zoneName: "강남·서초", passengerCount: 1115, sharePct: 7.5, topContextLabel: "강남구 역삼동" },
+      { zoneName: "서남", passengerCount: 800, sharePct: 5.4, topContextLabel: "영등포구 여의도동" },
+      { zoneName: "서북", passengerCount: 422, sharePct: 2.9, topContextLabel: "마포구 동교동" },
+      { zoneName: "성남·광주·이천·여주·양평", passengerCount: 108, sharePct: 0.7, topContextLabel: "광주시 송정동" },
+      { zoneName: "의정부·양주·동두천·포천·연천·가평", passengerCount: 42, sharePct: 0.3, topContextLabel: "의정부시 의정부동" },
+      { zoneName: "안양·군포·의왕·과천·광명·부천", passengerCount: 37, sharePct: 0.3, topContextLabel: "과천시 중앙동" },
+      { zoneName: "용인·수원·화성·오산·평택·안성", passengerCount: 20, sharePct: 0.1, topContextLabel: "화성시 오산동" },
+      { zoneName: "고양·파주·김포", passengerCount: 20, sharePct: 0.1, topContextLabel: "파주시 야당동" },
+      { zoneName: "시흥·안산", passengerCount: 3, sharePct: 0.0, topContextLabel: "시흥시 정왕동" }
+    ]
+  },
+  meta: {
+    ...liveSnapshotMetaBase,
+    queryEcho: {
+      direction: "inbound",
+      focusArea: "서울특별시 강동구 상일동",
+      fallbackReason: "empty_live_rows"
+    }
+  }
+};
