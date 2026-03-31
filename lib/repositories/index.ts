@@ -5,10 +5,11 @@ import { PostgresDashboardRepository } from "@/lib/repositories/postgres-dashboa
 
 export function getDashboardRepository() {
   const env = getEnv();
-  const baseRepository =
-    env.APP_DATA_MODE === "postgres"
-    ? new PostgresDashboardRepository()
-    : new LocalDashboardRepository();
+  if (env.APP_DATA_MODE === "postgres") {
+    return new PostgresDashboardRepository();
+  }
+
+  const baseRepository = new LocalDashboardRepository();
 
   if (env.APP_SOURCE_MODE === "live") {
     return new LiveDashboardRepository(baseRepository);

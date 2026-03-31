@@ -2,8 +2,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import pg from "pg";
+import { createPgConfig } from "./create-pg-config.mjs";
+import { loadScriptEnv } from "./load-env.mjs";
 
 const { Client } = pg;
+
+loadScriptEnv();
 
 async function main() {
   if (!process.env.DATABASE_URL) {
@@ -11,7 +15,7 @@ async function main() {
     return;
   }
 
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client(createPgConfig(process.env.DATABASE_URL));
   await client.connect();
 
   const migrationDir = path.join(process.cwd(), "db", "migrations");
@@ -35,6 +39,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error(`DB migration failed: ${error.message}`);
   process.exit(1);
 });

@@ -1,41 +1,54 @@
 # Sangil-dong Station Dashboard
 
-Codex-first analytical dashboard for Sangil-dong Station (`상일동역`) with:
+Codex-first analytical dashboard for Sangil-dong with:
 
-- a Next.js dashboard and read APIs
-- Python 3.11 ETL scaffolding
-- Postgres-ready schemas and migrations
-- deterministic `local/sample` fallback mode
-- structured contracts, evidence, and quality gates
+- a Next.js map-first dashboard and read APIs
+- Python 3.11 ETL jobs
+- Postgres materialization for station ridership and living-zone OD
+- deterministic local/sample fallback
+- evidence, manifests, and quality reports under `runtime/` and `docs/reports/`
 
-## Architecture
+## Operating model
 
-This repository is intentionally **not** a generic control plane. The target shape is:
-
-```text
-User
-  -> Next.js dashboard
-  -> Next.js read API
-  -> query/read model layer
-  -> Postgres or local sample repository
-  -> Python ETL / quality gate / evidence
-```
-
-### Interpreting the dashboard
-
-The product now mixes two validated public-data layers on purpose:
-
-- `상일동역 승하차 추세`: station-level subway ridership
-- `상일동 생활권 대중교통 OD`: area-based public-transit OD centered on `상일동`
-
-That means the ridership section is **역 기준**, while the OD section is **생활권 기준**.
-
-### Default modes
+The repository now supports two distinct runtime paths:
 
 - `APP_DATA_MODE=local`
-- `APP_SOURCE_MODE=sample`
+  Uses curated sample fixtures or live wrappers for development.
+- `APP_DATA_MODE=postgres`
+  Reads **only** materialized Postgres facts. In this mode the dashboard does not call the OD API at request time.
 
-Those defaults keep the app usable even when no database, API keys, or live transport feeds are available.
+This separation is deliberate. The public OD API is quota-limited and sometimes unstable, so the production-safe path is:
+
+```text
+OD API / verified snapshot
+  -> capture step
+  -> ETL materialization
+  -> Postgres facts / views
+  -> dashboard read APIs
+  -> UI
+```
+
+## Data interpretation
+
+The product intentionally combines two different public-data grains:
+
+- station-level Sangil-dong Station ridership trend
+- living-zone public-transit OD centered on Sangil-dong area
+
+That means the ridership section is station-grain and the OD section is living-zone-grain.
+
+## Environment variables
+
+Copy `.env.example` to `.env.local`.
+
+Important DB guidance:
+
+- `DATABASE_URL`
+  Preferred runtime connection string. Use an IPv4-reachable pooled URL when available.
+- `DIRECT_DATABASE_URL`
+  Optional direct admin connection for environments that can reach the direct host.
+
+If you use Supabase and the direct host is IPv6-only from your network, keep the pooled URL in `DATABASE_URL` and reserve the direct URL for environments that can reach IPv6.
 
 ## Quick start
 
@@ -50,8 +63,6 @@ python -m pip install -e .[dev]
 
 ### 2. Install JavaScript dependencies
 
-If `pnpm` is not globally installed, use `npx pnpm@10.8.1`.
-
 ```powershell
 npx pnpm@10.8.1 install
 ```
@@ -62,7 +73,7 @@ npx pnpm@10.8.1 install
 Copy-Item .env.example .env.local
 ```
 
-### 4. Run the app
+### 4. Start the app
 
 ```powershell
 npx pnpm@10.8.1 dev
@@ -70,43 +81,59 @@ npx pnpm@10.8.1 dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## DB-first workflow
+
+### Prepare schema and seeds
+
+```powershell
+npx pnpm@10.8.1 db:migrate
+npx pnpm@10.8.1 db:seed
+```
+
+### Materialize dashboard facts
+
+Default load:
+
+```powershell
+npx pnpm@10.8.1 etl:dashboard
+```
+
+Attempt a fresh OD capture before loading:
+
+```powershell
+.\.venv\Scripts\python.exe -m etl.jobs.load_dashboard_postgres --refresh-live-od
+```
+
+Attempt both daily and 15-minute OD capture:
+
+```powershell
+.\.venv\Scripts\python.exe -m etl.jobs.load_dashboard_postgres --refresh-live-od --refresh-live-15min --top-n 4 --hours 6,7,8,17,18,19
+```
+
+In `postgres` mode, the dashboard reads only:
+
+- `fact_station_daily`
+- `vw_living_zone_od_daily_latest`
+- `vw_living_zone_od_15min_latest`
+
 ## Verification commands
 
 ```powershell
 npx pnpm@10.8.1 lint
 npx pnpm@10.8.1 typecheck
 npx pnpm@10.8.1 test
-pytest
-npx pnpm@10.8.1 build
+.\.venv\Scripts\python.exe -m pytest
 powershell -ExecutionPolicy Bypass -File .\scripts\preflight.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1
 ```
 
-## Live source inspection
+## What changed to avoid runtime API failures
 
-```powershell
-.\.venv\Scripts\python.exe .\scripts\inspect_sources\check_live_sources.py
-```
-
-The latest summary is written to:
-
-- `docs/reports/live-source-check-latest.md`
-- `docs/reports/live-source-check-latest.json`
-
-## Development flow
-
-1. Start from the operating contract in [`AGENTS.md`](./AGENTS.md).
-2. Write or update the stage plan under [`plans/`](./plans).
-3. Keep contracts in [`lib/schemas`](./lib/schemas) and [`docs/contracts`](./docs/contracts).
-4. Keep evidence in [`runtime/`](./runtime) and report artifacts in [`docs/reports/`](./docs/reports).
-5. Do not promote live-mode assumptions without documented evidence in [`docs/data-source-validation.md`](./docs/data-source-validation.md).
-
-## Operating principles
-
-- Responses are `data + meta`, not loose text blobs.
-- Known limitations are surfaced in both API and UI.
-- ETL failures produce evidence and quarantine records.
-- Local/sample mode should keep health checks, API smoke tests, and the dashboard functional.
+- Postgres mode no longer wraps request-time live OD fetches.
+- OD capture and dashboard serving are separated.
+- Verified snapshots live in `data/verified_snapshots/` as ETL evidence, not runtime UI state.
+- Views prefer fresher non-snapshot rows but keep verified snapshot rows available when the public API is blocked.
+- 15-minute OD capture is optional and quota-aware instead of being attempted on every request.
 
 ## Repository structure
 
@@ -116,28 +143,27 @@ components/             dashboard components
 lib/                    config, schemas, repositories, queries, ops
 etl/                    Python extract / transform / load / jobs / contracts
 db/                     SQL migrations, views, seeds
-docs/                   contracts, ADRs, runbooks, limitations, reports
+docs/                   contracts, runbooks, source validation, reports
 plans/                  stage plan and report templates
 scripts/                preflight, verify, db helpers, source inspection
-data/                   sample, raw sample, and processed fixtures
+data/                   fixtures, verified snapshots, raw sample inputs
 runtime/                local task/run/event/evidence store
-work_instruction/       source specification package, kept as reference only
+work_instruction/       source specification package, reference only
 ```
 
 ## Current status
 
-- Codex-first operating layer: in place
-- Bootstrap app: in place
-- Local/sample-mode dashboard: in place
-- Live ridership validation: verified
-- Live area-based OD validation: verified
-- Station-level OD validation: not available through the currently verified public API
-- Vercel deployment: production deployment verified
+- map-first dashboard: implemented
+- local/sample fallback: implemented
+- DB-first ETL path: implemented
+- Postgres repository queries: implemented
+- station ridership live verification: completed
+- living-zone OD endpoint verification: completed
+- request-time OD API dependency in postgres mode: removed
+- local DB connectivity: depends on a working `DATABASE_URL` / pooler URL in the current network
 
-## Known limitations
+## More detail
 
-See [`docs/known-limitations.md`](./docs/known-limitations.md). The short version:
-
-- 공개 OD는 상일동역 역-역 OD가 아니라 상일동 생활권 기반 대중교통 OD입니다.
-- local/sample mode uses curated sample data.
-- Postgres workflows are ready but not exercised as the primary runtime path yet.
+- [`docs/data-source-validation.md`](./docs/data-source-validation.md)
+- [`docs/db-first-etl-architecture.md`](./docs/db-first-etl-architecture.md)
+- [`docs/known-limitations.md`](./docs/known-limitations.md)

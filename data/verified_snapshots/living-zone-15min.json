@@ -1,0 +1,21 @@
+{
+  "capturedAt": "2026-03-31T00:00:00+09:00",
+  "serviceDate": "",
+  "sourceName": "getGeneralBusandUrbanRailwaysODUsageby15MinuteIntervals",
+  "aggregationLevel": "zone",
+  "focusArea": {
+    "ctpvCd": "11",
+    "sggCd": "11740",
+    "emdName": "???"
+  },
+  "trackedHours": [
+    "06:00",
+    "07:00",
+    "08:00",
+    "17:00",
+    "18:00",
+    "19:00"
+  ],
+  "rows": [],
+  "fallbackUsed": false
+}

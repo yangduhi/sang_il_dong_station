@@ -1,84 +1,69 @@
 # Data source validation
 
-## Current state
+## Current source posture
 
-Live source verification is now **materially completed for the currently reachable public APIs** in this workspace.
+The repository now separates:
 
-The repository currently operates in:
+- source validation and capture
+- ETL materialization
+- dashboard reads
 
-- `APP_DATA_MODE=local`
-- `APP_SOURCE_MODE=sample`
+This means dashboard requests are no longer the place where OD API instability is absorbed.
 
-## Candidate sources
+## Verified public sources
 
-### Ridership
-- Seoul daily ridership API / file sources
-- Seoul hourly ridership API / file sources
-- Seoul Metro type / transfer file sources
+### Station ridership
 
-### OD
-- MOLIT / public transport OD API
-- STCIS OD export workflow
-
-### Station metadata
-- national urban rail station metadata
-- Seoul Metro station coordinate data
-
-## Verified in this repository
-
-- sample fixtures exist under `data/raw_samples/`
-- local/sample-mode ETL can transform those fixtures into processed artifacts
-- API/UI contracts expose `grainLabel`, `sourceNames`, `lastLoadedAt`, and `limitations`
-- a live Seoul ridership probe can be executed via `scripts/inspect_sources/check_live_sources.py`
-- the current live-source summary is stored at `docs/reports/live-source-check-latest.md`
-
-## Latest live check summary
-
-### Seoul daily ridership
+- Source: `CardSubwayStatsNew`
 - Status: verified
-- Source used: `CardSubwayStatsNew`
-- Probe date used: `20260327`
-- Result: response rows were returned and the 5호선 `상일동` station row was present
-- Latest sample record from the probe:
-  - `SBWY_ROUT_LN_NM`: `5호선`
-  - `SBWY_STNS_NM`: `상일동`
-  - `GTON_TNOPE`: `17354`
-  - `GTOFF_TNOPE`: `16224`
-  - `REG_YMD`: `20260330`
+- Use in product: station daily ridership trend for Sangil-dong Station
+- Current ETL handling: fetched live during ETL and loaded into `fact_station_daily`
 
-### OD
-- Status: endpoint verified, station-level contract not available
-- Source used: `getDailyODUsageforGeneralBusesandUrbanRailways`
-- Example query used:
-  - `opr_ymd=20250301`
-  - `dptre_ctpv_cd=11`
-  - `dptre_sgg_cd=11740`
-  - `arvl_ctpv_cd=11`
-  - `arvl_sgg_cd=11680`
-- Result: endpoint responded successfully and returned OD rows with `시도/시군구` filters and `읍면동` response fields
-- Important limitation: this public API is **not station-level OD**. It is an area-based OD dataset, so it cannot directly answer “상일동역에서 어디로 갔는가” without additional mapping or a different source
+### Area-based OD
+
+- Source: `getDailyODUsageforGeneralBusesandUrbanRailways`
+- Status: endpoint verified
+- Grain: area-based public-transit OD with 읍면동 fields
+- Use in product: Sangil-dong living-zone OD, not station-to-station OD
+- Current ETL handling:
+  - preferred path: live capture into verified snapshots, then DB load
+  - fallback path: use the last verified snapshot already stored under `data/verified_snapshots/`
 
 ### OD 15-minute
-- Status: endpoint verified, station-level contract not available
-- Source used: `getGeneralBusandUrbanRailwaysODUsageby15MinuteIntervals`
-- Example query used:
-  - `opr_ymd=20250301`
-  - `dptre_ctpv_cd=11`
-  - `dptre_sgg_cd=11740`
-  - `arvl_ctpv_cd=11`
-  - `arvl_sgg_cd=11680`
-  - `tzon=07`
-  - `qtrp=1`
-- Result: endpoint responded successfully and returned OD rows with `시간대(tzon)` + `15분단위(qtrp)` buckets
-- Important limitation: this endpoint also remains **area-based**, not station-based
 
-## Blockers for full live completion
+- Source: `getGeneralBusandUrbanRailwaysODUsageby15MinuteIntervals`
+- Status: endpoint verified
+- Grain: area-based public-transit OD with 15-minute buckets
+- Use in product: optional temporal panel for living-zone OD
+- Current ETL handling:
+  - capture is optional and quota-aware
+  - DB schema exists even when the latest capture produced no rows
 
-- station-level OD source confirmation and implementation
-- optional Postgres connection for live-mode integration testing
+## Why the architecture changed
 
-## Required next step
+The public OD API can fail for reasons that should not directly affect the UI:
 
-Extend `scripts/inspect_sources/` so that:
-- Seoul hourly or recent-week ridership sources are verified in addition to `CardSubwayStatsNew`
-- station-level OD alternatives are evaluated against the currently verified area-based OD endpoint
+- quota exhaustion
+- auth or approval propagation delays
+- empty or blocked responses for a given capture window
+
+Because of that, production-safe operation is now:
+
+```text
+public source
+  -> validation / capture
+  -> verified snapshot or raw capture
+  -> Postgres load
+  -> dashboard read
+```
+
+## Current blockers
+
+- station-level OD is still not available through the verified public endpoint
+- the current local workstation cannot reach the Supabase direct host over IPv6, so local DB verification needs a pooled `DATABASE_URL`
+
+## Evidence
+
+- latest live probe summary: `docs/reports/live-source-check-latest.json`
+- latest ETL materialization summary: `docs/reports/etl-dashboard-load-latest.json`
+- verified ETL input snapshots: `data/verified_snapshots/`

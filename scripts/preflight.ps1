@@ -27,6 +27,7 @@ $requiredPaths = @(
   ".env.example",
   "docs\known-limitations.md",
   "data\raw_samples\ridership\sample-response.json",
+  "data\verified_snapshots\origin-to-zone.json",
   "db\migrations\001_init.sql",
   "app\api\health\route.ts"
 )

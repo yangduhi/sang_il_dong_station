@@ -1,0 +1,24 @@
+{
+  "runId": "dashboard-postgres-etl-20260331054820",
+  "executedAt": "2026-03-31T05:48:20.459584+00:00",
+  "rows": {
+    "stationDaily": 13,
+    "livingZoneOdDaily": 26,
+    "livingZoneOd15min": 0,
+    "rowsLoaded": 0
+  },
+  "status": "blocked",
+  "batchStrategy": {
+    "daily": "Refresh station_daily and living_zone_od_daily once per batch. Dashboard reads the latest materialized facts only.",
+    "fifteenMinute": "Optional batch. Capture only top daily zones and only tracked commute hours to stay below OD API quota."
+  },
+  "warnings": [
+    "Postgres materialization blocked: connection failed: connection to server at \"2406:da14:271:9912:7aa0:e900:90b3:2465\", port 5432 failed: Network is unreachable (0x00002743/10051)\n\tIs the server running on that host and accepting TCP/IP connections?"
+  ],
+  "evidencePaths": [
+    "D:\\vscode\\sang_il_dong_station\\data\\verified_snapshots\\origin-to-zone.json",
+    "D:\\vscode\\sang_il_dong_station\\data\\verified_snapshots\\zone-to-destination.json",
+    "D:\\vscode\\sang_il_dong_station\\data\\verified_snapshots\\living-zone-15min.json"
+  ],
+  "error": "connection failed: connection to server at \"2406:da14:271:9912:7aa0:e900:90b3:2465\", port 5432 failed: Network is unreachable (0x00002743/10051)\n\tIs the server running on that host and accepting TCP/IP connections?"
+}
