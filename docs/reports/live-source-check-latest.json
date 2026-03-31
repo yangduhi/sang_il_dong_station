@@ -114,6 +114,93 @@
           "pasg_dstnc_sum": 750932
         }
       ]
+    },
+    "molitOd15Min": {
+      "status": "ok",
+      "sourceName": "getGeneralBusandUrbanRailwaysODUsageby15MinuteIntervals",
+      "params": {
+        "opr_ymd": "20250301",
+        "dptre_ctpv_cd": "11",
+        "dptre_sgg_cd": "11740",
+        "arvl_ctpv_cd": "11",
+        "arvl_sgg_cd": "11680",
+        "tzon": "07",
+        "qtrp": "1"
+      },
+      "granularity": "sgg-filtered response with emd-level origin/destination fields and 15-minute buckets",
+      "totalCount": 187,
+      "stationLevelSupported": false,
+      "sampleItems": [
+        {
+          "opr_ymd": "20250301",
+          "dow_cd": "7",
+          "dow_nm": "토요일",
+          "dptre_ctpv_cd": "11",
+          "dptre_ctpv_nm": "서울특별시",
+          "dptre_sgg_cd": "11740",
+          "dptre_sgg_nm": "강동구",
+          "dptre_emd_cd": "1174010100",
+          "dptre_emd_nm": "명일동",
+          "arvl_ctpv_cd": "11",
+          "arvl_ctpv_nm": "서울특별시",
+          "arvl_sgg_cd": "11680",
+          "arvl_sgg_nm": "강남구",
+          "arvl_emd_cd": "1168010100",
+          "arvl_emd_nm": "역삼동",
+          "tzon": "07",
+          "qtrp": "45",
+          "pasg_nope": 1,
+          "pasg_cnt": 1,
+          "avg_pasg_hr": 2041,
+          "avg_pasg_dstnc": 10500
+        },
+        {
+          "opr_ymd": "20250301",
+          "dow_cd": "7",
+          "dow_nm": "토요일",
+          "dptre_ctpv_cd": "11",
+          "dptre_ctpv_nm": "서울특별시",
+          "dptre_sgg_cd": "11740",
+          "dptre_sgg_nm": "강동구",
+          "dptre_emd_cd": "1174010100",
+          "dptre_emd_nm": "명일동",
+          "arvl_ctpv_cd": "11",
+          "arvl_ctpv_nm": "서울특별시",
+          "arvl_sgg_cd": "11680",
+          "arvl_sgg_nm": "강남구",
+          "arvl_emd_cd": "1168010300",
+          "arvl_emd_nm": "개포동",
+          "tzon": "07",
+          "qtrp": "00",
+          "pasg_nope": 1,
+          "pasg_cnt": 1,
+          "avg_pasg_hr": 2181,
+          "avg_pasg_dstnc": 12100
+        },
+        {
+          "opr_ymd": "20250301",
+          "dow_cd": "7",
+          "dow_nm": "토요일",
+          "dptre_ctpv_cd": "11",
+          "dptre_ctpv_nm": "서울특별시",
+          "dptre_sgg_cd": "11740",
+          "dptre_sgg_nm": "강동구",
+          "dptre_emd_cd": "1174010100",
+          "dptre_emd_nm": "명일동",
+          "arvl_ctpv_cd": "11",
+          "arvl_ctpv_nm": "서울특별시",
+          "arvl_sgg_cd": "11680",
+          "arvl_sgg_nm": "강남구",
+          "arvl_emd_cd": "1168010500",
+          "arvl_emd_nm": "삼성동",
+          "tzon": "07",
+          "qtrp": "00",
+          "pasg_nope": 1,
+          "pasg_cnt": 1,
+          "avg_pasg_hr": 2045,
+          "avg_pasg_dstnc": 12600
+        }
+      ]
     }
   }
 }

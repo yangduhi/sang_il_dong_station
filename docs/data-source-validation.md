@@ -58,6 +58,20 @@ The repository currently operates in:
 - Result: endpoint responded successfully and returned OD rows with `시도/시군구` filters and `읍면동` response fields
 - Important limitation: this public API is **not station-level OD**. It is an area-based OD dataset, so it cannot directly answer “상일동역에서 어디로 갔는가” without additional mapping or a different source
 
+### OD 15-minute
+- Status: endpoint verified, station-level contract not available
+- Source used: `getGeneralBusandUrbanRailwaysODUsageby15MinuteIntervals`
+- Example query used:
+  - `opr_ymd=20250301`
+  - `dptre_ctpv_cd=11`
+  - `dptre_sgg_cd=11740`
+  - `arvl_ctpv_cd=11`
+  - `arvl_sgg_cd=11680`
+  - `tzon=07`
+  - `qtrp=1`
+- Result: endpoint responded successfully and returned OD rows with `시간대(tzon)` + `15분단위(qtrp)` buckets
+- Important limitation: this endpoint also remains **area-based**, not station-based
+
 ## Blockers for full live completion
 
 - station-level OD source confirmation and implementation
