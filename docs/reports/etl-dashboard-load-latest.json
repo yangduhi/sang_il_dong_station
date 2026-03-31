@@ -1,11 +1,11 @@
 {
-  "runId": "dashboard-postgres-etl-20260331065355",
-  "executedAt": "2026-03-31T06:53:55.846463+00:00",
+  "runId": "dashboard-postgres-etl-20260331133611",
+  "executedAt": "2026-03-31T13:36:11.548024+00:00",
   "rows": {
-    "stationDaily": 13,
+    "stationDaily": 14,
     "livingZoneOdDaily": 26,
     "livingZoneOd15min": 0,
-    "rowsLoaded": 39
+    "rowsLoaded": 40
   },
   "status": "succeeded",
   "batchStrategy": {

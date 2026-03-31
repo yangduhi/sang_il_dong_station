@@ -166,5 +166,6 @@ work_instruction/       source specification package, reference only
 
 - [`docs/data-source-validation.md`](./docs/data-source-validation.md)
 - [`docs/db-first-etl-architecture.md`](./docs/db-first-etl-architecture.md)
+- [`docs/dashboard-ui-thesis.md`](./docs/dashboard-ui-thesis.md)
 - [`docs/runbooks/next-day-sgg-refresh.md`](./docs/runbooks/next-day-sgg-refresh.md)
 - [`docs/known-limitations.md`](./docs/known-limitations.md)

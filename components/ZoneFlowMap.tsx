@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { mapFocusPoint, resolveFlowVisual } from "@/lib/data/zone-visuals";
 
 type FlowRow = {
@@ -23,13 +23,13 @@ type Mode = "outbound" | "inbound";
 const modeCopy: Record<Mode, { label: string; accent: string; text: string }> = {
   outbound: {
     label: "유출",
-    accent: "#34d399",
-    text: "상일동 생활권에서 각 대상지로 이동하는 흐름"
+    accent: "#2fe0b6",
+    text: "상일동 생활권에서 각 권역으로 이어지는 이동 흐름"
   },
   inbound: {
     label: "유입",
-    accent: "#f59e0b",
-    text: "각 대상지에서 상일동 생활권으로 들어오는 흐름"
+    accent: "#f4c56a",
+    text: "각 권역에서 상일동 생활권으로 유입되는 이동 흐름"
   }
 };
 
@@ -42,7 +42,10 @@ function buildPath(mode: Mode, target: { x: number; y: number }) {
 }
 
 function intensity(passengerCount: number, max: number) {
-  if (max <= 0) return 0.18;
+  if (max <= 0) {
+    return 0.18;
+  }
+
   return 0.18 + (passengerCount / max) * 0.78;
 }
 
@@ -57,50 +60,51 @@ export function ZoneFlowMap({
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
 
   const rows = mode === "outbound" ? outboundRows : inboundRows;
-  const max = Math.max(1, ...rows.map((row) => row.passengerCount));
-
-  const visualRows = useMemo(
-    () =>
-      rows.map((row, index) => ({
-        ...row,
-        visual: resolveFlowVisual(row.zoneName, index, rows.length)
-      })),
-    [rows]
-  );
-
+  const visualRows = rows.map((row, index) => ({
+    ...row,
+    visual: resolveFlowVisual(row.zoneName, index, rows.length)
+  }));
   const selectedRow = visualRows.find((row) => row.zoneName === selectedLabel) ?? visualRows[0] ?? null;
+  const max = Math.max(1, ...rows.map((row) => row.passengerCount));
+  const topRows = visualRows.slice(0, 6);
 
   return (
-    <section className="relative overflow-hidden rounded-[36px] border border-white/10 bg-[#07101b] shadow-[0_40px_120px_rgba(2,6,23,0.55)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(249,115,22,0.12),transparent_24%),linear-gradient(180deg,#07101b_0%,#081527_100%)]" />
+    <section className="relative overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,27,0.96),rgba(7,17,31,0.84))] shadow-[0_40px_120px_rgba(2,6,23,0.55)]">
+      <div className="panel-edge" />
+      <div className="grid-sheen signal-sweep" />
+
       <div className="relative z-10 flex flex-col gap-6 p-6 md:p-8">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-cyan-300/80">Map-first OD Studio</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl">{title}</h2>
+            <p className="text-[11px] uppercase tracking-[0.32em] text-[#86f3de]/80">Map-first OD studio</p>
+            <h2 className="font-display mt-2 text-2xl font-semibold text-white md:text-[2.2rem]">{title}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{subtitle}</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            {(Object.keys(modeCopy) as Mode[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setMode(key)}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
-                  mode === key
-                    ? "border-white/40 bg-white/12 text-white"
-                    : "border-white/10 bg-black/15 text-slate-300 hover:border-white/25"
-                }`}
-              >
-                {modeCopy[key].label}
-              </button>
-            ))}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="rounded-full border border-white/10 bg-black/20 p-1">
+              {(Object.keys(modeCopy) as Mode[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setMode(key)}
+                  className={`rounded-full px-4 py-2 text-sm transition ${
+                    mode === key
+                      ? "bg-white text-slate-950 shadow-[0_12px_28px_rgba(255,255,255,0.12)]"
+                      : "text-slate-300 hover:text-white"
+                  }`}
+                >
+                  {modeCopy[key].label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500">{modeCopy[mode].text}</p>
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="relative rounded-[30px] border border-white/10 bg-black/10 p-4">
-            <div className="absolute inset-0 bg-[linear-gradient(transparent_96%,rgba(255,255,255,0.04)_97%),linear-gradient(90deg,transparent_96%,rgba(255,255,255,0.04)_97%)] bg-[length:36px_36px]" />
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="relative min-h-[540px] overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-4 md:p-6">
+            <div className="grid-sheen" />
             <svg viewBox="0 0 1000 640" className="relative z-10 w-full">
               <defs>
                 <filter id="zoneGlow">
@@ -129,7 +133,8 @@ export function ZoneFlowMap({
               {visualRows.map((row) => {
                 const active = selectedRow?.zoneName === row.zoneName;
                 const alpha = intensity(row.passengerCount, max);
-                const fillColor = mode === "outbound" ? `rgba(45, 212, 191, ${alpha})` : `rgba(251, 191, 36, ${alpha})`;
+                const fillColor = mode === "outbound" ? `rgba(47, 224, 182, ${alpha})` : `rgba(244, 197, 106, ${alpha})`;
+
                 return (
                   <g key={row.zoneName}>
                     <polygon
@@ -156,6 +161,7 @@ export function ZoneFlowMap({
 
               {visualRows.map((row) => {
                 const active = selectedRow?.zoneName === row.zoneName;
+
                 return (
                   <path
                     key={`${mode}-${row.zoneName}`}
@@ -182,37 +188,82 @@ export function ZoneFlowMap({
                 </text>
               </g>
             </svg>
+
+            <div className="absolute bottom-5 left-5 rounded-full border border-white/10 bg-black/[0.25] px-4 py-2 text-xs uppercase tracking-[0.24em] text-slate-300">
+              {scopeLabel}
+            </div>
           </div>
 
           <aside className="flex flex-col gap-4">
-            <div className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur-md">
-              <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/70">Selected flow</p>
-              <h3 className="mt-3 text-2xl font-semibold text-white">{selectedRow?.zoneName ?? "항목 선택"}</h3>
+            <div className="rounded-[30px] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-md">
+              <p className="text-xs uppercase tracking-[0.3em] text-[#86f3de]/70">Selected flow</p>
+              <h3 className="font-display mt-3 text-[2rem] font-semibold text-white">
+                {selectedRow?.zoneName ?? "권역 선택"}
+              </h3>
               <p className="mt-2 text-sm leading-6 text-slate-300">
                 {selectedRow
-                  ? `${scopeLabel} 기준 ${mode === "outbound" ? "유출" : "유입"} 대상의 대표 생활권은 ${selectedRow.topContextLabel} 입니다.`
-                  : "지도의 항목을 선택하면 대표 생활권과 비중을 더 자세히 볼 수 있습니다."}
+                  ? `${scopeLabel} 기준 ${mode === "outbound" ? "유출" : "유입"} 흐름에서 대표 생활권은 ${selectedRow.topContextLabel} 입니다.`
+                  : "지도의 권역을 선택하면 대표 생활권과 비중을 자세히 볼 수 있습니다."}
               </p>
+
               {selectedRow ? (
                 <div className="mt-5 grid gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/15 px-4 py-3">
-                    <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Passenger volume</div>
-                    <div className="mt-2 text-2xl font-semibold text-white">{selectedRow.passengerCount.toLocaleString()}명</div>
+                  <div className="rounded-[22px] border border-white/10 bg-black/[0.15] px-4 py-3">
+                    <div className="text-xs uppercase tracking-[0.24em] text-slate-500">Passenger volume</div>
+                    <div className="font-display mt-2 text-3xl font-semibold text-white">
+                      {selectedRow.passengerCount.toLocaleString("ko-KR")}명
+                    </div>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/15 px-4 py-3">
-                    <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Share</div>
-                    <div className="mt-2 text-2xl font-semibold text-white">{selectedRow.sharePct.toFixed(1)}%</div>
+                  <div className="rounded-[22px] border border-white/10 bg-black/[0.15] px-4 py-3">
+                    <div className="text-xs uppercase tracking-[0.24em] text-slate-500">Share</div>
+                    <div className="font-display mt-2 text-3xl font-semibold text-white">
+                      {selectedRow.sharePct.toFixed(1)}%
+                    </div>
                   </div>
                 </div>
               ) : null}
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-black/18 p-5">
+            <div className="rounded-[30px] border border-white/10 bg-black/20 p-5">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Top corridors</p>
+                <p className="text-xs text-slate-500">click to inspect</p>
+              </div>
+              <div className="mt-4 space-y-2">
+                {topRows.map((row, index) => {
+                  const active = selectedRow?.zoneName === row.zoneName;
+
+                  return (
+                    <button
+                      key={`${mode}-${row.zoneName}`}
+                      type="button"
+                      onClick={() => setSelectedLabel(row.zoneName)}
+                      className={`flex w-full items-center justify-between gap-3 rounded-[20px] border px-4 py-3 text-left transition ${
+                        active
+                          ? "border-white/30 bg-white/10 text-white"
+                          : "border-white/[0.08] bg-white/[0.03] text-slate-300 hover:border-white/20 hover:bg-white/[0.05]"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium">{row.zoneName}</p>
+                        <p className="truncate text-xs text-slate-500">{row.topContextLabel}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-display text-lg font-semibold">{row.sharePct.toFixed(1)}%</p>
+                        <p className="text-xs text-slate-500">#{index + 1}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-[30px] border border-white/10 bg-black/[0.12] p-5">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Layer notes</p>
-              <ul className="mt-4 space-y-3 text-sm text-slate-300">
-                <li>권역 라벨이 아닌 구/시 라벨이 와도 fallback 위치를 생성하도록 준비했습니다.</li>
+              <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+                <li>권역 레이어는 생활권 레이어와 다른 fallback 위치를 생성하도록 준비했습니다.</li>
                 <li>zone 데이터는 기존 polygon 위치를, sgg 데이터는 ring layout fallback을 사용합니다.</li>
-                <li>내일 sgg 적재가 들어오면 이 맵 레이어가 같은 컴포넌트에서 그대로 받을 수 있습니다.</li>
+                <li>이후 sgg 적재가 들어오면 같은 레이아웃 컴포넌트에서 그대로 받을 수 있습니다.</li>
               </ul>
             </div>
           </aside>
