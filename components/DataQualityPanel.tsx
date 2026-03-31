@@ -24,19 +24,19 @@ export function DataQualityPanel({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap gap-2">
-        <span className="rounded-full bg-slate-900 px-3 py-1 text-sm font-medium text-white">
+        <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white">
           grainLabel: {grainLabel}
         </span>
-        <span className="rounded-full bg-slate-200 px-3 py-1 text-sm font-medium text-slate-700">
+        <span className="rounded-full bg-white/8 px-3 py-1 text-sm font-medium text-slate-200">
           lastLoadedAt: {lastLoadedAt}
         </span>
       </div>
       <div className="grid gap-3">
         {metrics.map((metric) => (
-          <div key={metric.label} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-            <span className="text-sm text-slate-600">{metric.label}</span>
+          <div key={metric.label} className="flex items-center justify-between rounded-2xl bg-black/18 px-4 py-3">
+            <span className="text-sm text-slate-300">{metric.label}</span>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-slate-900">{metric.value}</span>
+              <span className="text-sm font-semibold text-white">{metric.value}</span>
               <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusColorMap[metric.status]}`}>
                 {metric.status}
               </span>
@@ -44,9 +44,9 @@ export function DataQualityPanel({
           </div>
         ))}
       </div>
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-        <p className="mb-2 text-sm font-semibold text-amber-900">Known limitations</p>
-        <ul className="space-y-2 text-sm text-amber-900">
+      <div className="rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4">
+        <p className="mb-2 text-sm font-semibold text-amber-100">Known limitations</p>
+        <ul className="space-y-2 text-sm text-amber-100/90">
           {limitations.map((item) => (
             <li key={item}>- {item}</li>
           ))}

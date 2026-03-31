@@ -4,6 +4,7 @@ import { KpiCards } from "@/components/KpiCards";
 import { OdBarChart } from "@/components/OdBarChart";
 import { SectionCard } from "@/components/SectionCard";
 import { TrendChart } from "@/components/TrendChart";
+import { ZoneFlowMap } from "@/components/ZoneFlowMap";
 import type {
   DataQualitySummaryResponse,
   HourlyProfileResponse,
@@ -28,69 +29,175 @@ export function DashboardShell({
   quality
 }: DashboardShellProps) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-8 md:px-8">
-      <section className="rounded-[32px] bg-slate-950 px-6 py-8 text-white shadow-panel md:px-10">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-blue-200">Sangil-dong Data Product</p>
-            <h1 className="mt-2 text-3xl font-semibold md:text-5xl">
-              상일동역 승하차 추세 + 상일동 생활권 대중교통 OD
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm text-slate-300 md:text-base">
-              상단은 상일동역(5호선)의 역 단위 승하차 추세를 보여주고, 하단은 공개 OD API를 이용해
-              상일동 생활권에서 어느 권역으로 이동하는지, 어느 권역에서 상일동 생활권으로 들어오는지를 보여줍니다.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3 text-sm">
-            <span className="rounded-full bg-white/10 px-4 py-2">{overview.data.station.lineName}</span>
-            <span className="rounded-full bg-white/10 px-4 py-2">
-              승하차 범위: {overview.data.analysisScope.scopeLabel}
-            </span>
-            <span className="rounded-full bg-emerald-400/20 px-4 py-2">
-              OD 범위: {originToZone.data.analysisScope.scopeLabel}
-            </span>
-          </div>
-        </div>
-      </section>
+    <main className="min-h-screen bg-[#040814] text-white">
+      <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-6 px-4 py-5 md:px-8 md:py-8">
+        <section className="relative overflow-hidden rounded-[40px] border border-white/10 bg-[#07101b] px-6 py-8 shadow-[0_40px_120px_rgba(2,6,23,0.55)] md:px-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(56,189,248,0.18),transparent_26%),radial-gradient(circle_at_84%_16%,rgba(16,185,129,0.14),transparent_18%),linear-gradient(180deg,#07101b_0%,#06101a_100%)]" />
+          <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="max-w-4xl">
+              <p className="text-[11px] uppercase tracking-[0.34em] text-cyan-300/80">Sangil-dong Mobility Observatory</p>
+              <h1 className="mt-3 text-3xl font-semibold leading-tight text-white md:text-6xl">
+                상일동역 승하차 추세와
+                <br />
+                상일동 생활권 OD를 한 화면에서 읽는 지도형 대시보드
+              </h1>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">
+                역 단위 승하차 추세와 생활권 기반 대중교통 OD를 분리해서 보여줍니다.
+                상단 메인 맵은 상일동 생활권과 서울·경기 권역 사이의 흐름을 보여주고,
+                하단 분석 영역은 상일동역 자체의 규모와 품질 메모를 정리합니다.
+              </p>
+            </div>
 
-      <SectionCard title="핵심 지표" subtitle="상일동역 역 단위 승하차 live 데이터 기준입니다.">
-        <KpiCards kpis={overview.data.kpis} />
-      </SectionCard>
+            <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[360px]">
+              <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">승하차 범위</p>
+                <p className="mt-2 text-lg font-semibold text-white">{overview.data.analysisScope.scopeLabel}</p>
+                <p className="mt-1 text-sm text-slate-300">{overview.data.analysisScope.description}</p>
+              </div>
+              <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">OD 범위</p>
+                <p className="mt-2 text-lg font-semibold text-white">{originToZone.data.analysisScope.scopeLabel}</p>
+                <p className="mt-1 text-sm text-slate-300">{originToZone.data.analysisScope.description}</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-        <SectionCard title="상일동역 일별 승하차 추세" subtitle="서울 공개 API에서 확인한 상일동역 일별 승차/하차 추세입니다.">
-          <TrendChart rows={overview.data.trend} />
-        </SectionCard>
-        <SectionCard title="데이터 품질 / 해석 범위" subtitle="역 기반 지표와 생활권 기반 지표를 한 화면에서 구분해 읽을 수 있게 합니다.">
-          <DataQualityPanel
-            grainLabel={quality.meta.grainLabel}
-            lastLoadedAt={quality.meta.lastLoadedAt}
-            limitations={quality.data.warnings.concat(quality.meta.limitations)}
-            metrics={quality.data.metrics}
+        <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)_320px]">
+          <aside className="space-y-6">
+            <SectionCard
+              eyebrow="Mode"
+              title="작동 원리"
+              subtitle="역 기반과 생활권 기반이 한 화면에 섞일 때의 해석 기준을 먼저 고정합니다."
+            >
+              <div className="space-y-4 text-sm leading-7 text-slate-300">
+                <p>
+                  `상일동역 승하차`는 서울 공개 API에서 확인한 역 단위 데이터입니다. `생활권 OD`는
+                  공개 OD API를 상일동(읍면동) 기준으로 재집계한 대중교통 흐름입니다.
+                </p>
+                <div className="grid gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-black/18 p-4">
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">현재 라우팅</p>
+                    <p className="mt-2 text-base font-semibold text-white">지도는 생활권, 차트는 역 중심</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/18 p-4">
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">권역 기준</p>
+                    <p className="mt-2 text-base font-semibold text-white">서울 6 + 경기 7 분석 권역</p>
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              eyebrow="Filters"
+              title="표현 레벨"
+              subtitle="이번 버전은 정보 구조와 공간 감각을 우선하고, 과한 효과는 단계적으로 추가합니다."
+            >
+              <ul className="space-y-3 text-sm text-slate-300">
+                <li>- 기본 맵은 권역 레벨 choropleth + flow overlay 입니다.</li>
+                <li>- 대표 생활권 라벨은 각 권역에서 통행량이 가장 큰 읍면동 기준입니다.</li>
+                <li>- 시간대 패턴은 추후 15분 OD 모드 전환으로 확장 가능합니다.</li>
+              </ul>
+            </SectionCard>
+          </aside>
+
+          <ZoneFlowMap
+            title="상일동 생활권 OD 맵"
+            subtitle="생활권 중심의 대중교통 흐름을 권역 레벨로 단순화해, 공간 관계가 먼저 읽히도록 설계했습니다."
+            scopeLabel={originToZone.data.analysisScope.scopeLabel}
+            outboundRows={originToZone.data.rows}
+            inboundRows={zoneToDestination.data.rows}
           />
-        </SectionCard>
-      </div>
 
-      <SectionCard
-        title="시간대별 패턴"
-        subtitle="역 단위 시간대 승하차 live source는 아직 연결하지 않았기 때문에 별도 안내 상태를 노출합니다."
-      >
-        <HourlyProfile rows={hourly.data.rows} />
-      </SectionCard>
+          <aside className="space-y-6">
+            <SectionCard
+              eyebrow="Insights"
+              title="주요 도착 권역"
+              subtitle="상일동 생활권에서 바깥으로 나갈 때 도착 비중이 높은 권역입니다."
+            >
+              <OdBarChart rows={originToZone.data.rows.slice(0, 6)} directionLabel="origin-to-zone-side" />
+            </SectionCard>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <SectionCard
-          title="상일동 생활권 출발 -> 권역 도착"
-          subtitle="공개 OD API에서 상일동(읍면동) 출발 대중교통 이동을 권역 단위로 재집계한 결과입니다."
-        >
-          <OdBarChart rows={originToZone.data.rows} directionLabel="origin-to-zone" />
-        </SectionCard>
-        <SectionCard
-          title="권역 출발 -> 상일동 생활권 도착"
-          subtitle="공개 OD API에서 상일동(읍면동) 도착 대중교통 이동을 권역 단위로 재집계한 결과입니다."
-        >
-          <OdBarChart rows={zoneToDestination.data.rows} directionLabel="zone-to-destination" />
-        </SectionCard>
+            <SectionCard
+              eyebrow="Return"
+              title="주요 유입 권역"
+              subtitle="외부 권역에서 상일동 생활권으로 유입되는 흐름입니다."
+            >
+              <OdBarChart rows={zoneToDestination.data.rows.slice(0, 6)} directionLabel="zone-to-destination-side" />
+            </SectionCard>
+          </aside>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+          <SectionCard
+            eyebrow="Ridership"
+            title="상일동역 승하차 추세"
+            subtitle="역 단위 live 데이터의 규모 변화는 지도 아래에서 별도로 읽습니다."
+          >
+            <div className="space-y-6">
+              <KpiCards kpis={overview.data.kpis} />
+              <TrendChart rows={overview.data.trend} />
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            eyebrow="Quality"
+            title="데이터 품질과 해석 범위"
+            subtitle="이 대시보드의 두 층위가 어떻게 다른지 제품 표면에서 숨기지 않습니다."
+          >
+            <DataQualityPanel
+              grainLabel={quality.meta.grainLabel}
+              lastLoadedAt={quality.meta.lastLoadedAt}
+              limitations={quality.data.warnings.concat(quality.meta.limitations)}
+              metrics={quality.data.metrics}
+            />
+          </SectionCard>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+          <SectionCard
+            eyebrow="Temporal"
+            title="시간대 패턴"
+            subtitle="역 단위 시간대 데이터는 아직 보수적으로 분리해 두고, 현재 단계의 연결 범위를 명확히 보여줍니다."
+          >
+            <HourlyProfile rows={hourly.data.rows} />
+          </SectionCard>
+
+          <SectionCard
+            eyebrow="Reading guide"
+            title="실제 운영 해석"
+            subtitle="권역 맵에서 읽은 흐름을 업무/주거/배후권 관점으로 바로 번역합니다."
+          >
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">업무권 이동</p>
+                <p className="mt-2 text-lg font-semibold text-white">{originToZone.data.rows[0]?.zoneName}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  생활권 outbound 기준으로 가장 큰 권역입니다. 직주 이동 해석의 시작점이 됩니다.
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">근접 배후권</p>
+                <p className="mt-2 text-lg font-semibold text-white">
+                  {
+                    zoneToDestination.data.rows.find((row) => row.zoneName.includes("하남"))?.zoneName ??
+                    "하남·구리·남양주"
+                  }
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  상일동 생활권과 인접 수도권 사이의 대중교통 수요를 읽는 핵심 구간입니다.
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">주의할 점</p>
+                <p className="mt-2 text-lg font-semibold text-white">역 OD가 아님</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  OD는 생활권 기반이므로, 역-역 해석은 별도 원천 없이는 직접 만들지 않습니다.
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
       </div>
     </main>
   );
