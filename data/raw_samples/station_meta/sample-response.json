@@ -1,0 +1,15 @@
+{
+  "sourceName": "sample-station-meta-fixture",
+  "station": {
+    "stationId": "sangil-5-551",
+    "stationName": "상일동역",
+    "lineName": "5호선",
+    "operatorName": "서울교통공사",
+    "zoneName": "강동·송파",
+    "cityDo": "서울특별시",
+    "sigungu": "강동구",
+    "address": "서울특별시 강동구 상일동",
+    "lat": 37.5568,
+    "lng": 127.1659
+  }
+}

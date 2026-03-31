@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-100 text-slate-950 antialiased;
+  background-image:
+    radial-gradient(circle at top left, rgba(219, 234, 254, 0.9), transparent 32%),
+    linear-gradient(180deg, #eff6ff 0%, #f8fafc 42%, #f8fafc 100%);
+  min-height: 100vh;
+}
+
+a {
+  @apply text-slate-900;
+}
+
+code {
+  @apply rounded bg-slate-200 px-1 py-0.5 text-[0.9em];
+}

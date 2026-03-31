@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install JS dependencies
+        run: npx pnpm@10.8.1 install
+      - name: Install Python dependencies
+        run: |
+          py -3.11 -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install --upgrade pip
+          .\.venv\Scripts\python.exe -m pip install -e .[dev]
+      - name: Run verification
+        shell: pwsh
+        run: .\scripts\verify.ps1

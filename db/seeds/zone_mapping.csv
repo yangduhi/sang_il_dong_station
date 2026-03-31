@@ -1,0 +1,11 @@
+city_do,sigungu,zone_id,zone_name,zone_group,sort_order
+서울특별시,강동구,seoul-east-southeast,강동·송파,seoul,1
+서울특별시,송파구,seoul-east-southeast,강동·송파,seoul,1
+서울특별시,강남구,seoul-gangnam,강남·서초,seoul,2
+서울특별시,서초구,seoul-gangnam,강남·서초,seoul,2
+서울특별시,종로구,seoul-core,도심(종로·중구·용산),seoul,3
+서울특별시,중구,seoul-core,도심(종로·중구·용산),seoul,3
+서울특별시,용산구,seoul-core,도심(종로·중구·용산),seoul,3
+경기도,하남시,gyeonggi-east,하남·구리·남양주,gyeonggi,7
+경기도,구리시,gyeonggi-east,하남·구리·남양주,gyeonggi,7
+경기도,남양주시,gyeonggi-east,하남·구리·남양주,gyeonggi,7

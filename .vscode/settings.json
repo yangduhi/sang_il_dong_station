@@ -1,0 +1,58 @@
+{
+  "files.encoding": "utf8",
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "etl/tests"
+  ],
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}"
+  ],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "search.exclude": {
+    "**/.next": true,
+    "**/node_modules": true,
+    "**/.venv": true,
+    "**/data/raw": true,
+    "**/data/processed": true,
+    "**/runtime": true,
+    "**/coverage": true,
+    "**/playwright-report": true
+  },
+  "files.watcherExclude": {
+    "**/.next/**": true,
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/data/raw/**": true,
+    "**/data/processed/**": true,
+    "**/runtime/**": true
+  },
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "docs/contracts/**/*.json"
+      ],
+      "url": "https://json.schemastore.org/json-schema-draft-07.json"
+    }
+  ]
+}

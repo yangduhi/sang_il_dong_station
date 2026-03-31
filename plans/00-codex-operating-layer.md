@@ -1,0 +1,22 @@
+# Stage Plan
+
+- Stage: 00 / bootstrap + contract-first operating layer
+- Goal: establish Codex-friendly repository rules, deterministic fallback, and runnable local/sample-mode dashboard scaffolding
+- Inputs:
+  - `work_instruction/` staged work order package
+  - architecture addendum and adoption guide
+- Planned file changes:
+  - repository config, docs, scripts, schemas, sample repository, Next.js app, ETL scaffolding
+- Verification commands:
+  - `preflight`
+  - `lint`
+  - `typecheck`
+  - `test`
+  - `pytest`
+  - `build`
+  - `test:e2e`
+- Assumptions:
+  - live API keys are unavailable
+  - local/sample fallback is the correct default
+- Risks:
+  - live data validation remains incomplete until credentials are provided

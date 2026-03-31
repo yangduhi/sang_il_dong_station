@@ -1,0 +1,32 @@
+# Node / Next
+node_modules/
+.next/
+out/
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+*.egg-info/
+
+# Local runtime
+runtime/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data
+data/raw/
+data/processed/
+
+# OS / editors
+.DS_Store
+Thumbs.db

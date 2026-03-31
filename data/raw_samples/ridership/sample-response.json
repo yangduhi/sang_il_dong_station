@@ -1,0 +1,16 @@
+{
+  "sourceName": "sample-ridership-fixture",
+  "station": {
+    "stationId": "sangil-5-551",
+    "stationName": "상일동역",
+    "lineName": "5호선"
+  },
+  "dailyTrend": [
+    { "serviceDate": "2026-03-30", "rideCount": 18192, "alightCount": 17611 },
+    { "serviceDate": "2026-03-31", "rideCount": 18234, "alightCount": 17642 }
+  ],
+  "hourlyWeekdayProfile": [
+    { "hourBucket": "08:00", "rideCount": 2012, "alightCount": 950 },
+    { "hourBucket": "18:00", "rideCount": 1460, "alightCount": 1652 }
+  ]
+}

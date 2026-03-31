@@ -1,0 +1,45 @@
+{
+  "station_id": "sangil-5-551",
+  "passed": true,
+  "evaluated_at": "2026-03-31T01:47:32.257861+00:00",
+  "metrics": [
+    {
+      "name": "duplicate_count",
+      "value": 0.0,
+      "threshold": 0.0,
+      "comparator": "eq",
+      "passed": true
+    },
+    {
+      "name": "station_match_rate",
+      "value": 99.1,
+      "threshold": 98.0,
+      "comparator": "gte",
+      "passed": true
+    },
+    {
+      "name": "zone_mapping_failure_rate",
+      "value": 0.6,
+      "threshold": 2.0,
+      "comparator": "lte",
+      "passed": true
+    },
+    {
+      "name": "quarantine_rate",
+      "value": 0.4,
+      "threshold": 1.0,
+      "comparator": "lte",
+      "passed": true
+    },
+    {
+      "name": "freshness_hours",
+      "value": 12.0,
+      "threshold": 24.0,
+      "comparator": "lte",
+      "passed": true
+    }
+  ],
+  "warnings": [
+    "Sample-mode quality gate uses curated fixture thresholds."
+  ]
+}

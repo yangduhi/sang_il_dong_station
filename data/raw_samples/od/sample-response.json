@@ -1,0 +1,13 @@
+{
+  "sourceName": "sample-od-fixture",
+  "grainLabel": "station_to_zone",
+  "stationName": "상일동역",
+  "originToZone": [
+    { "zoneName": "강남·서초", "passengerCount": 6480, "sharePct": 31.2, "topStationName": "강남역" },
+    { "zoneName": "강동·송파", "passengerCount": 4912, "sharePct": 23.7, "topStationName": "잠실역" }
+  ],
+  "zoneToDestination": [
+    { "zoneName": "강동·송파", "passengerCount": 6220, "sharePct": 29.9, "topStationName": "잠실역" },
+    { "zoneName": "하남·구리·남양주", "passengerCount": 4460, "sharePct": 21.5, "topStationName": "하남검단산역" }
+  ]
+}

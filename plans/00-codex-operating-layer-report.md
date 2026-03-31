@@ -1,0 +1,28 @@
+# Stage Report
+
+- Stage: 00 / bootstrap + contract-first operating layer
+- Files changed:
+  - repository configs, Next app, ETL package, DB SQL, docs, scripts, tests, workflows
+- Commands executed:
+  - `npx pnpm@10.8.1 install`
+  - `.\\.venv\\Scripts\\python.exe -m pip install -e .[dev]`
+  - `preflight`
+  - `lint`
+  - `typecheck`
+  - `test`
+  - `pytest`
+  - `build`
+  - `test:e2e`
+- Results:
+  - local/sample-mode analytical dashboard renders and APIs respond
+  - ETL sample pipeline and quality gate produce evidence
+  - contracts, docs, and verification scripts are in place
+- Evidence generated:
+  - `runtime/`
+  - `data/processed/local-dashboard.json`
+  - `docs/reports/etl-quality-latest.json`
+- Risks / blockers:
+  - no live service keys
+  - no verified Vercel deployment
+- Next stage readiness:
+  - ready for live source inspection and Postgres-backed integration

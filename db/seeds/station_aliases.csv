@@ -1,0 +1,3 @@
+raw_station_name,normalized_station_name,normalized_line_name,operator_name,canonical_station_id,note
+상일동,상일동역,5호선,서울교통공사,sangil-5-551,기본 표기 보정
+상일동역,상일동역,5호선,서울교통공사,sangil-5-551,canonical

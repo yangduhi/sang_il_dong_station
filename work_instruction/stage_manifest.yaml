@@ -1,0 +1,108 @@
+project: sangildong-station-dashboard
+version: 1
+stages:
+  - id: 00
+    name: global-rules
+    file: 00_global-rules.md
+    depends_on: []
+    outputs:
+      - AGENTS.md
+      - README.md
+      - .env.example
+      - docs/
+  - id: 01
+    name: bootstrap
+    file: 01_bootstrap.md
+    depends_on: [00]
+    outputs:
+      - Next.js app skeleton
+      - Python ETL skeleton
+      - /api/health
+  - id: 02
+    name: data-source-validation
+    file: 02_data-source-validation.md
+    depends_on: [01]
+    outputs:
+      - docs/data-source-validation.md
+      - docs/data-dictionary.md
+      - data/raw_samples/
+  - id: 03
+    name: zone-and-station-normalization
+    file: 03_zone-design-and-station-metadata.md
+    depends_on: [02]
+    outputs:
+      - db/seeds/zone_mapping.csv
+      - station alias map
+      - station normalization docs
+  - id: 04
+    name: database-schema
+    file: 04_database-schema.md
+    depends_on: [03]
+    outputs:
+      - db/migrations/
+      - db/views/
+      - db/seeds/
+  - id: 05
+    name: extract
+    file: 05_extract.md
+    depends_on: [02,04]
+    outputs:
+      - etl/extract/
+      - data/raw/
+  - id: 06
+    name: transform
+    file: 06_transform.md
+    depends_on: [03,05]
+    outputs:
+      - etl/transform/
+      - data/processed/
+      - docs/transformation-rules.md
+  - id: 07
+    name: load
+    file: 07_load.md
+    depends_on: [04,06]
+    outputs:
+      - etl/load/
+      - etl_job_runs records
+  - id: 08
+    name: api
+    file: 08_api.md
+    depends_on: [07]
+    outputs:
+      - app/api/
+      - lib/queries/
+  - id: 09
+    name: dashboard-ui
+    file: 09_dashboard-ui.md
+    depends_on: [08]
+    outputs:
+      - app/
+      - components/
+  - id: 10
+    name: testing-qa
+    file: 10_testing-qa.md
+    depends_on: [05,06,07,08,09]
+    outputs:
+      - tests/
+      - docs/qa-checklist.md
+      - docs/known-limitations.md
+  - id: 11
+    name: deploy-vercel
+    file: 11_deploy-vercel.md
+    depends_on: [09,10]
+    outputs:
+      - vercel.json
+      - docs/runbooks/deploy.md
+  - id: 12
+    name: scheduler-ops
+    file: 12_scheduler-ops.md
+    depends_on: [07,11]
+    outputs:
+      - .github/workflows/
+      - docs/runbooks/
+  - id: 13
+    name: acceptance-handover
+    file: 13_acceptance-and-handover.md
+    depends_on: [12]
+    outputs:
+      - final handover docs

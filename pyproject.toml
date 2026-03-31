@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sangildong_station_dashboard"
+version = "0.1.0"
+description = "Codex-first ETL and analytical dashboard support for Sangil-dong Station."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "httpx>=0.28.1",
+  "pydantic>=2.10.4",
+  "psycopg[binary]>=3.2.3"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.4"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["etl/tests"]
+
+[tool.setuptools]
+packages = ["etl", "etl.common", "etl.extract", "etl.transform", "etl.load", "etl.jobs", "etl.repositories"]
