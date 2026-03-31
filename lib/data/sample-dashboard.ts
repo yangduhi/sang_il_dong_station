@@ -6,16 +6,7 @@ import type {
   OdZoneToDestinationResponse,
   StationOverviewResponse
 } from "@/lib/schemas/responses";
-
-const station = {
-  stationId: "sangil-5-551",
-  stationName: "상일동역",
-  lineName: "5호선",
-  operatorName: "서울교통공사",
-  zoneName: "강동·송파",
-  cityDo: "서울특별시",
-  sigungu: "강동구"
-};
+import { sangilLivingZone, sangilStation, sangilStationScope, zoneNames } from "@/lib/data/analysis-config";
 
 const dateRange = {
   from: "2026-03-18",
@@ -24,7 +15,8 @@ const dateRange = {
 
 export const sampleOverview: StationOverviewResponse = {
   data: {
-    station,
+    station: sangilStation,
+    analysisScope: sangilStationScope,
     kpis: {
       latestRideCount: 18234,
       latestAlightCount: 17642,
@@ -59,16 +51,16 @@ export const sampleOverview: StationOverviewResponse = {
     }
   },
   meta: {
-    sourceNames: ["sample-ridership-fixture", "sample-od-fixture"],
-    grainLabel: "station_to_zone",
+    sourceNames: ["sample-ridership-fixture", "sample-area-od-fixture"],
+    grainLabel: "station_daily + living_zone_od",
     lastLoadedAt: "2026-03-31T07:30:00+09:00",
     dateRange,
     limitations: [
-      "기본값은 curated sample data 이며 live source 검증은 아직 완료되지 않았습니다.",
-      "OD grain 은 mixed-grain 대응 구조로 설계되어 있습니다."
+      "기본값은 curated sample data 입니다.",
+      "OD는 상일동역이 아니라 상일동 생활권 기준으로 해석한 예시입니다."
     ],
     queryEcho: {
-      stationId: station.stationId
+      stationId: sangilStation.stationId
     },
     fallbackUsed: true
   }
@@ -76,7 +68,8 @@ export const sampleOverview: StationOverviewResponse = {
 
 export const sampleHourly: HourlyProfileResponse = {
   data: {
-    station,
+    station: sangilStation,
+    analysisScope: sangilStationScope,
     weekdayType: "weekday",
     rows: ([
       ["05:00", 188, 120],
@@ -109,17 +102,18 @@ export const sampleHourly: HourlyProfileResponse = {
 
 export const sampleOriginToZone: OdOriginToZoneResponse = {
   data: {
-    station,
+    station: sangilStation,
+    analysisScope: sangilLivingZone,
     dateRange,
     rows: [
-      { zoneName: "강남·서초", passengerCount: 6480, sharePct: 31.2, topStationName: "강남역" },
-      { zoneName: "강동·송파", passengerCount: 4912, sharePct: 23.7, topStationName: "잠실역" },
-      { zoneName: "하남·구리·남양주", passengerCount: 3010, sharePct: 14.5, topStationName: "하남풍산역" },
-      { zoneName: "도심(종로·중구·용산)", passengerCount: 2422, sharePct: 11.7, topStationName: "광화문역" },
-      { zoneName: "동북", passengerCount: 1810, sharePct: 8.7, topStationName: "군자역" },
-      { zoneName: "서남", passengerCount: 980, sharePct: 4.7, topStationName: "영등포구청역" },
-      { zoneName: "서북", passengerCount: 664, sharePct: 3.2, topStationName: "홍대입구역" },
-      { zoneName: "기타", passengerCount: 470, sharePct: 2.3, topStationName: "기타" }
+      { zoneName: "강남·서초", passengerCount: 6480, sharePct: 31.2, topContextLabel: "강남구 역삼동" },
+      { zoneName: "강동·송파", passengerCount: 4912, sharePct: 23.7, topContextLabel: "송파구 잠실동" },
+      { zoneName: "하남·구리·남양주", passengerCount: 3010, sharePct: 14.5, topContextLabel: "하남시 풍산동" },
+      { zoneName: "도심(종로·중구·용산)", passengerCount: 2422, sharePct: 11.7, topContextLabel: "종로구 세종로" },
+      { zoneName: "동북", passengerCount: 1810, sharePct: 8.7, topContextLabel: "광진구 자양동" },
+      { zoneName: "서남", passengerCount: 980, sharePct: 4.7, topContextLabel: "영등포구 당산동" },
+      { zoneName: "서북", passengerCount: 664, sharePct: 3.2, topContextLabel: "마포구 서교동" },
+      { zoneName: "기타", passengerCount: 470, sharePct: 2.3, topContextLabel: "기타 권역" }
     ]
   },
   meta: sampleOverview.meta
@@ -127,17 +121,18 @@ export const sampleOriginToZone: OdOriginToZoneResponse = {
 
 export const sampleZoneToDestination: OdZoneToDestinationResponse = {
   data: {
-    station,
+    station: sangilStation,
+    analysisScope: sangilLivingZone,
     dateRange,
     rows: [
-      { zoneName: "강동·송파", passengerCount: 6220, sharePct: 29.9, topStationName: "잠실역" },
-      { zoneName: "하남·구리·남양주", passengerCount: 4460, sharePct: 21.5, topStationName: "하남검단산역" },
-      { zoneName: "강남·서초", passengerCount: 3950, sharePct: 19.0, topStationName: "교대역" },
-      { zoneName: "도심(종로·중구·용산)", passengerCount: 2472, sharePct: 11.9, topStationName: "광화문역" },
-      { zoneName: "동북", passengerCount: 1884, sharePct: 9.1, topStationName: "건대입구역" },
-      { zoneName: "서남", passengerCount: 1010, sharePct: 4.9, topStationName: "당산역" },
-      { zoneName: "서북", passengerCount: 430, sharePct: 2.1, topStationName: "합정역" },
-      { zoneName: "기타", passengerCount: 354, sharePct: 1.7, topStationName: "기타" }
+      { zoneName: "강동·송파", passengerCount: 6220, sharePct: 29.9, topContextLabel: "송파구 잠실동" },
+      { zoneName: "하남·구리·남양주", passengerCount: 4460, sharePct: 21.5, topContextLabel: "하남시 덕풍동" },
+      { zoneName: "강남·서초", passengerCount: 3950, sharePct: 19.0, topContextLabel: "서초구 서초동" },
+      { zoneName: "도심(종로·중구·용산)", passengerCount: 2472, sharePct: 11.9, topContextLabel: "종로구 세종로" },
+      { zoneName: "동북", passengerCount: 1884, sharePct: 9.1, topContextLabel: "광진구 자양동" },
+      { zoneName: "서남", passengerCount: 1010, sharePct: 4.9, topContextLabel: "영등포구 당산동" },
+      { zoneName: "서북", passengerCount: 430, sharePct: 2.1, topContextLabel: "마포구 합정동" },
+      { zoneName: "기타", passengerCount: 354, sharePct: 1.7, topContextLabel: "기타 권역" }
     ]
   },
   meta: sampleOverview.meta
@@ -145,19 +140,20 @@ export const sampleZoneToDestination: OdZoneToDestinationResponse = {
 
 export const sampleQuality: DataQualitySummaryResponse = {
   data: {
-    station,
+    station: sangilStation,
+    analysisScopes: [sangilStationScope, sangilLivingZone],
     dataMode: "local",
     sourceMode: "sample",
     warnings: [
       "현재 화면은 local/sample fallback 으로 구동되고 있습니다.",
-      "live source 의 실제 API 응답은 service key 제공 후 재검증이 필요합니다."
+      "승하차는 역 단위, OD는 생활권 단위로 해석된 예시입니다."
     ],
     metrics: [
       { label: "Data mode", value: "local", status: "warning" },
       { label: "Source mode", value: "sample", status: "warning" },
+      { label: "Ridership scope", value: "상일동역", status: "good" },
+      { label: "OD scope", value: "상일동 생활권", status: "warning" },
       { label: "Freshness", value: "12h", status: "good" },
-      { label: "Station match rate", value: "99.1%", status: "good" },
-      { label: "Zone mapping failure", value: "0.6%", status: "good" },
       { label: "Quarantine ratio", value: "0.4%", status: "warning" }
     ]
   },
@@ -197,15 +193,5 @@ export const sampleHealth: HealthResponse = {
   }
 };
 
-export const sampleStations = [station];
-
-export const sampleZones = [
-  "강동·송파",
-  "강남·서초",
-  "도심(종로·중구·용산)",
-  "동북",
-  "서북",
-  "서남",
-  "하남·구리·남양주",
-  "기타"
-];
+export const sampleStations = [sangilStation];
+export const sampleZones = [...zoneNames, "기타"];

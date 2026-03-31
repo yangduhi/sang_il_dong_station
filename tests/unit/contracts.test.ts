@@ -12,8 +12,10 @@ describe("response contracts", () => {
     expect(stationOverviewResponseSchema.parse(sampleOverview).data.station.stationName).toBe("상일동역");
   });
 
-  it("parses origin-to-zone sample", () => {
-    expect(odOriginToZoneResponseSchema.parse(sampleOriginToZone).data.rows[0]?.zoneName).toBe("강남·서초");
+  it("parses living-zone outbound sample", () => {
+    const parsed = odOriginToZoneResponseSchema.parse(sampleOriginToZone);
+    expect(parsed.data.analysisScope.scopeLabel).toBe("상일동 생활권");
+    expect(parsed.data.rows[0]?.zoneName).toBe("강남·서초");
   });
 
   it("parses health sample", () => {
@@ -21,6 +23,6 @@ describe("response contracts", () => {
   });
 
   it("parses quality sample", () => {
-    expect(dataQualitySummaryResponseSchema.parse(sampleQuality).data.metrics.length).toBeGreaterThan(0);
+    expect(dataQualitySummaryResponseSchema.parse(sampleQuality).data.analysisScopes.length).toBeGreaterThan(0);
   });
 });

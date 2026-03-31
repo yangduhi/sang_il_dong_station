@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { baseApiResponseSchema, dateRangeSchema, stationSchema } from "@/lib/schemas/common";
+import {
+  analysisScopeSchema,
+  baseApiResponseSchema,
+  dateRangeSchema,
+  stationSchema
+} from "@/lib/schemas/common";
 
 export const kpiSchema = z.object({
   latestRideCount: z.number(),
@@ -16,6 +21,7 @@ export const trendPointSchema = z.object({
 
 export const stationOverviewDataSchema = z.object({
   station: stationSchema,
+  analysisScope: analysisScopeSchema,
   kpis: kpiSchema,
   trend: z.array(trendPointSchema),
   qualitySummary: z.object({
@@ -34,6 +40,7 @@ export const hourlyPointSchema = z.object({
 
 export const hourlyProfileDataSchema = z.object({
   station: stationSchema,
+  analysisScope: analysisScopeSchema,
   weekdayType: z.string(),
   rows: z.array(hourlyPointSchema)
 });
@@ -42,23 +49,26 @@ export const zoneOdRowSchema = z.object({
   zoneName: z.string(),
   passengerCount: z.number(),
   sharePct: z.number(),
-  topStationName: z.string()
+  topContextLabel: z.string()
 });
 
 export const originToZoneDataSchema = z.object({
   station: stationSchema,
+  analysisScope: analysisScopeSchema,
   dateRange: dateRangeSchema,
   rows: z.array(zoneOdRowSchema)
 });
 
 export const zoneToDestinationDataSchema = z.object({
   station: stationSchema,
+  analysisScope: analysisScopeSchema,
   dateRange: dateRangeSchema,
   rows: z.array(zoneOdRowSchema)
 });
 
 export const dataQualitySummaryDataSchema = z.object({
   station: stationSchema,
+  analysisScopes: z.array(analysisScopeSchema),
   dataMode: z.enum(["local", "postgres"]),
   sourceMode: z.enum(["sample", "live"]),
   warnings: z.array(z.string()),

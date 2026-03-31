@@ -7,6 +7,7 @@ describe("dashboard repository", () => {
     const overview = await repository.getStationOverview("sangil-5-551", {});
 
     expect(overview.data.station.stationName).toBe("상일동역");
+    expect(overview.data.analysisScope.scopeLabel).toBe("상일동역");
     expect(overview.meta.fallbackUsed).toBe(true);
   });
 });

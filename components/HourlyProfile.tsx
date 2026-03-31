@@ -7,6 +7,15 @@ type HourlyProfileProps = {
 };
 
 export function HourlyProfile({ rows }: HourlyProfileProps) {
+  if (!rows.length) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+        역 단위 시간대 승하차 live source는 아직 연결하지 않았습니다. 현재 공개 source로는
+        `상일동역 일별 승하차`와 `상일동 생활권 OD`를 우선 연결한 상태입니다.
+      </div>
+    );
+  }
+
   const max = Math.max(...rows.flatMap((row) => [row.rideCount, row.alightCount]));
 
   return (

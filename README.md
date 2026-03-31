@@ -21,6 +21,15 @@ User
   -> Python ETL / quality gate / evidence
 ```
 
+### Interpreting the dashboard
+
+The product now mixes two validated public-data layers on purpose:
+
+- `상일동역 승하차 추세`: station-level subway ridership
+- `상일동 생활권 대중교통 OD`: area-based public-transit OD centered on `상일동`
+
+That means the ridership section is **역 기준**, while the OD section is **생활권 기준**.
+
 ### Default modes
 
 - `APP_DATA_MODE=local`
@@ -120,14 +129,15 @@ work_instruction/       source specification package, kept as reference only
 - Codex-first operating layer: in place
 - Bootstrap app: in place
 - Local/sample-mode dashboard: in place
-- Live data validation: scaffolded, pending credentials and live calls
-- Postgres/live mode: schema and repository scaffolding in place
-- Vercel deployment: deploy-ready docs only
+- Live ridership validation: verified
+- Live area-based OD validation: verified
+- Station-level OD validation: not available through the currently verified public API
+- Vercel deployment: production deployment verified
 
 ## Known limitations
 
 See [`docs/known-limitations.md`](./docs/known-limitations.md). The short version:
 
-- live OD verification is blocked until external service keys are provided
-- local/sample mode uses curated sample data
-- Postgres workflows are ready but not exercised in this workspace
+- 공개 OD는 상일동역 역-역 OD가 아니라 상일동 생활권 기반 대중교통 OD입니다.
+- local/sample mode uses curated sample data.
+- Postgres workflows are ready but not exercised as the primary runtime path yet.

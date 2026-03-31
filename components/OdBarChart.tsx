@@ -2,7 +2,7 @@ type OdRow = {
   zoneName: string;
   passengerCount: number;
   sharePct: number;
-  topStationName: string;
+  topContextLabel: string;
 };
 
 type OdBarChartProps = {
@@ -11,6 +11,14 @@ type OdBarChartProps = {
 };
 
 export function OdBarChart({ rows, directionLabel }: OdBarChartProps) {
+  if (!rows.length) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+        현재 조건으로 표시할 생활권 OD 결과가 없습니다.
+      </div>
+    );
+  }
+
   const max = Math.max(...rows.map((row) => row.passengerCount));
 
   return (
@@ -20,7 +28,7 @@ export function OdBarChart({ rows, directionLabel }: OdBarChartProps) {
           <div className="flex items-center justify-between gap-4 text-sm">
             <div>
               <span className="font-medium text-slate-900">{row.zoneName}</span>
-              <span className="ml-2 text-slate-500">Top 역: {row.topStationName}</span>
+              <span className="ml-2 text-slate-500">대표 생활권: {row.topContextLabel}</span>
             </div>
             <div className="text-right text-slate-700">
               {row.passengerCount.toLocaleString()}명 · {row.sharePct.toFixed(1)}%
