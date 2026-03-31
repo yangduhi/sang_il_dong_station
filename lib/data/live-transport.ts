@@ -3,7 +3,6 @@ import {
   sangilLivingZone,
   sangilStation,
   sangilStationScope,
-  type ZoneDefinition,
   zoneDefinitions
 } from "@/lib/data/analysis-config";
 import type {
@@ -66,7 +65,16 @@ async function fetchJsonUtf8(url: string) {
   });
   const buffer = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(buffer);
-  return JSON.parse(text) as Record<string, unknown>;
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return {
+      Error: {
+        code: "NON_JSON_RESPONSE",
+        message: text.slice(0, 300)
+      }
+    } satisfies Record<string, unknown>;
+  }
 }
 
 function formatDate(input: Date) {
@@ -267,6 +275,20 @@ async function fetchMolitDailyPair(
 
 type Direction = "outbound" | "inbound";
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<R>
+) {
+  const results: R[] = [];
+  for (let index = 0; index < items.length; index += concurrency) {
+    const batch = items.slice(index, index + concurrency);
+    const batchResults = await Promise.all(batch.map(worker));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
 function flattenZoneTargets() {
   return zoneDefinitions.flatMap((zone) =>
     zone.members.map((member) => ({
@@ -280,8 +302,7 @@ async function buildLivingZoneOd(direction: Direction) {
   const serviceDate = await resolveMolitWorkingDate();
   const targetPairs = flattenZoneTargets();
 
-  const rows = await Promise.all(
-    targetPairs.map(async ({ zone, member }) => {
+  const rows = await mapWithConcurrency(targetPairs, 4, async ({ zone, member }) => {
       const origin = direction === "outbound" ? { ctpvCd: "11", sggCd: "11740" } : { ctpvCd: member.ctpvCd, sggCd: member.sggCd };
       const destination = direction === "outbound" ? { ctpvCd: member.ctpvCd, sggCd: member.sggCd } : { ctpvCd: "11", sggCd: "11740" };
       const items = await fetchMolitDailyPair(origin, destination, serviceDate);
@@ -312,8 +333,7 @@ async function buildLivingZoneOd(direction: Direction) {
         passengerCount,
         topContextLabel
       };
-    })
-  );
+    });
 
   const aggregated = new Map<string, { passengerCount: number; topContextLabel: string }>();
   for (const row of rows) {
