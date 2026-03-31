@@ -82,6 +82,59 @@ def fetch_seoul_daily_sample(key: str) -> dict[str, Any]:
     }
 
 
+def fetch_molit_od_sample(key: str) -> dict[str, Any]:
+    base = (
+        "https://apis.data.go.kr/1613000/ODUsageforGeneralBusesandUrbanRailways/"
+        "getDailyODUsageforGeneralBusesandUrbanRailways"
+    )
+    params = {
+        "serviceKey": key,
+        "pageNo": "1",
+        "numOfRows": "5",
+        "opr_ymd": "20250301",
+        "dptre_ctpv_cd": "11",
+        "dptre_sgg_cd": "11740",
+        "arvl_ctpv_cd": "11",
+        "arvl_sgg_cd": "11680",
+        "dataType": "json",
+    }
+    payload = fetch_json_utf8(f"{base}?{'&'.join(f'{k}={v}' for k, v in params.items())}")
+    response = payload.get("Response")
+    if not response:
+        return {
+            "status": "error",
+            "sourceName": "getDailyODUsageforGeneralBusesandUrbanRailways",
+            "params": {
+                "opr_ymd": params["opr_ymd"],
+                "dptre_ctpv_cd": params["dptre_ctpv_cd"],
+                "dptre_sgg_cd": params["dptre_sgg_cd"],
+                "arvl_ctpv_cd": params["arvl_ctpv_cd"],
+                "arvl_sgg_cd": params["arvl_sgg_cd"],
+            },
+            "rawResult": payload,
+        }
+
+    items = response["body"]["items"]["item"]
+    if isinstance(items, dict):
+        items = [items]
+
+    return {
+        "status": "ok",
+        "sourceName": "getDailyODUsageforGeneralBusesandUrbanRailways",
+        "params": {
+            "opr_ymd": params["opr_ymd"],
+            "dptre_ctpv_cd": params["dptre_ctpv_cd"],
+            "dptre_sgg_cd": params["dptre_sgg_cd"],
+            "arvl_ctpv_cd": params["arvl_ctpv_cd"],
+            "arvl_sgg_cd": params["arvl_sgg_cd"],
+        },
+        "granularity": "sgg-filtered response with emd-level origin/destination fields",
+        "totalCount": response["body"]["totalCount"],
+        "stationLevelSupported": False,
+        "sampleItems": items[:3],
+    }
+
+
 def build_report() -> dict[str, Any]:
     env = load_local_env()
     report: dict[str, Any] = {
@@ -101,15 +154,13 @@ def build_report() -> dict[str, Any]:
         }
 
     data_go_key = env.get("DATA_GO_KR_SERVICE_KEY")
-    report["sources"]["molitOd"] = {
-        "status": "not_yet_verified",
-        "reason": (
-            "The repository has not implemented a callable endpoint test for the MOLIT/data.go.kr "
-            "OD API yet. Public STCIS docs currently expose a 15-minute regional OD dev endpoint, "
-            "not a confirmed station-level OD contract for this project."
-        ),
-        "serviceKeyPresent": bool(data_go_key),
-    }
+    if data_go_key:
+        report["sources"]["molitOd"] = fetch_molit_od_sample(data_go_key)
+    else:
+        report["sources"]["molitOd"] = {
+            "status": "blocked",
+            "reason": "DATA_GO_KR_SERVICE_KEY is missing",
+        }
 
     return report
 
@@ -150,10 +201,28 @@ def write_report_files(report: dict[str, Any]) -> None:
             "",
             "## MOLIT / OD",
             f"- Status: `{od['status']}`",
-            f"- Reason: {od['reason']}",
-            f"- Service key present: `{od['serviceKeyPresent']}`",
         ]
     )
+    if od["status"] == "ok":
+        lines.extend(
+            [
+                f"- Source: `{od['sourceName']}`",
+                f"- Query params: `{od['params']}`",
+                f"- Total count: `{od['totalCount']}`",
+                f"- Granularity: `{od['granularity']}`",
+                f"- Station-level supported: `{od['stationLevelSupported']}`",
+                "",
+                "```json",
+                json.dumps(od["sampleItems"], ensure_ascii=False, indent=2),
+                "```",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                f"- Reason: {od['reason']}",
+            ]
+        )
 
     MARKDOWN_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
