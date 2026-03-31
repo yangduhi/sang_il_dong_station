@@ -130,16 +130,17 @@ class PostgresDashboardLoader:
                 """
                 insert into fact_living_zone_od_15min (
                   service_date, direction, focus_ctpv_cd, focus_sgg_cd, focus_emd_name,
-                  aggregation_level, reference_zone_id, reference_label, hour_bucket,
+                  aggregation_level, reference_zone_id, reference_sgg_cd, reference_label, hour_bucket,
                   passenger_count, source_name, is_verified_snapshot, loaded_at
                 )
                 values (
                   %(service_date)s, %(direction)s, %(focus_ctpv_cd)s, %(focus_sgg_cd)s, %(focus_emd_name)s,
-                  %(aggregation_level)s, %(reference_zone_id)s, %(reference_label)s, %(hour_bucket)s,
+                  %(aggregation_level)s, %(reference_zone_id)s, %(reference_sgg_cd)s, %(reference_label)s, %(hour_bucket)s,
                   %(passenger_count)s, %(source_name)s, %(is_verified_snapshot)s, %(loaded_at)s
                 )
                 on conflict (service_date, direction, aggregation_level, reference_label, hour_bucket, source_name) do update
                 set reference_zone_id = excluded.reference_zone_id,
+                    reference_sgg_cd = excluded.reference_sgg_cd,
                     passenger_count = excluded.passenger_count,
                     is_verified_snapshot = excluded.is_verified_snapshot,
                     loaded_at = excluded.loaded_at

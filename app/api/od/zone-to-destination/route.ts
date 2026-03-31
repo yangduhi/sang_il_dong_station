@@ -10,7 +10,8 @@ export async function GET(request: NextRequest) {
     from: request.nextUrl.searchParams.get("from") ?? undefined,
     to: request.nextUrl.searchParams.get("to") ?? undefined,
     weekdayType: request.nextUrl.searchParams.get("weekdayType") ?? undefined,
-    passengerType: request.nextUrl.searchParams.get("passengerType") ?? undefined
+    passengerType: request.nextUrl.searchParams.get("passengerType") ?? undefined,
+    aggregationLevel: request.nextUrl.searchParams.get("aggregationLevel") ?? undefined
   });
 
   const repository = getDashboardRepository();

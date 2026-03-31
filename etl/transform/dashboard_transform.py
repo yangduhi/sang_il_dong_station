@@ -83,6 +83,34 @@ def build_living_zone_od_daily_fact_rows(snapshot: dict[str, Any], direction: st
     ]
 
 
+def build_living_zone_od_daily_fact_rows_from_materialization(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    service_date = payload["serviceDate"]
+    source_name = payload["sourceName"]
+    fallback_used = bool(payload.get("fallbackUsed", False))
+
+    return [
+        {
+            "service_date": service_date,
+            "direction": row["direction"],
+            "focus_ctpv_cd": payload["focusArea"]["ctpvCd"],
+            "focus_sgg_cd": payload["focusArea"]["sggCd"],
+            "focus_emd_name": payload["focusArea"]["emdName"],
+            "aggregation_level": row["aggregationLevel"],
+            "target_zone_id": row.get("targetZoneId"),
+            "target_label": row["targetLabel"],
+            "target_ctpv_cd": row.get("targetCtpvCd"),
+            "target_sgg_cd": row.get("targetSggCd"),
+            "top_context_label": row["topContextLabel"],
+            "passenger_count": int(row["passengerCount"]),
+            "share_pct": float(row["sharePct"]),
+            "source_name": source_name,
+            "is_verified_snapshot": fallback_used,
+            "loaded_at": _normalize_loaded_at(payload.get("capturedAt"), service_date),
+        }
+        for row in payload.get("dailyRows", [])
+    ]
+
+
 def build_living_zone_od_15min_fact_rows(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     _, zone_name_lookup = load_zone_lookup()
     service_date = snapshot["serviceDate"]
@@ -98,6 +126,7 @@ def build_living_zone_od_15min_fact_rows(snapshot: dict[str, Any]) -> list[dict[
             "focus_emd_name": snapshot["focusArea"]["emdName"],
             "aggregation_level": snapshot["aggregationLevel"],
             "reference_zone_id": row["referenceZoneId"],
+            "reference_sgg_cd": row.get("referenceSggCd"),
             "reference_label": row["referenceLabel"] or zone_name_lookup.get(row["referenceZoneId"], row["referenceZoneId"]),
             "hour_bucket": row["hourBucket"],
             "passenger_count": int(row["passengerCount"]),
@@ -106,6 +135,32 @@ def build_living_zone_od_15min_fact_rows(snapshot: dict[str, Any]) -> list[dict[
             "loaded_at": _normalize_loaded_at(snapshot.get("capturedAt"), service_date),
         }
         for row in snapshot.get("rows", [])
+    ]
+
+
+def build_living_zone_od_15min_fact_rows_from_materialization(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    service_date = payload["serviceDate"]
+    source_name = payload["sourceName"]
+    fallback_used = bool(payload.get("fallbackUsed", False))
+
+    return [
+        {
+            "service_date": service_date,
+            "direction": row["direction"],
+            "focus_ctpv_cd": payload["focusArea"]["ctpvCd"],
+            "focus_sgg_cd": payload["focusArea"]["sggCd"],
+            "focus_emd_name": payload["focusArea"]["emdName"],
+            "aggregation_level": row["aggregationLevel"],
+            "reference_zone_id": row.get("referenceZoneId"),
+            "reference_sgg_cd": row.get("referenceSggCd"),
+            "reference_label": row["referenceLabel"],
+            "hour_bucket": row["hourBucket"],
+            "passenger_count": int(row["passengerCount"]),
+            "source_name": source_name,
+            "is_verified_snapshot": fallback_used,
+            "loaded_at": _normalize_loaded_at(payload.get("capturedAt"), service_date),
+        }
+        for row in payload.get("rows", [])
     ]
 
 

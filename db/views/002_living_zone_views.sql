@@ -41,7 +41,8 @@ select
   passenger_count,
   source_name,
   is_verified_snapshot,
-  loaded_at
+  loaded_at,
+  reference_sgg_cd
 from (
   select
     *,

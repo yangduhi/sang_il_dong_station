@@ -7,6 +7,8 @@ import { LocalDashboardRepository } from "@/lib/repositories/local-dashboard-rep
 
 const localFallback = new LocalDashboardRepository();
 
+type AggregationLevel = "zone" | "sgg";
+
 type StationRow = {
   station_id: string;
   station_name: string;
@@ -26,35 +28,33 @@ type StationDailyRow = {
 };
 
 type LivingZoneDailyRow = {
-  service_date: string;
   target_label: string;
   top_context_label: string;
   passenger_count: number;
   share_pct: string | number;
   loaded_at: Date | string;
   source_name: string;
-  is_verified_snapshot: boolean;
 };
 
 type LivingZone15MinuteRow = {
-  service_date: string;
-  direction: "outbound" | "inbound";
   hour_bucket: string;
+  direction: "outbound" | "inbound";
   passenger_count: number;
   loaded_at: Date | string;
   source_name: string;
-  is_verified_snapshot: boolean;
 };
+
+function resolveAggregationLevel(query: Record<string, unknown>): AggregationLevel {
+  return query.aggregationLevel === "sgg" ? "sgg" : "zone";
+}
 
 function toIsoString(value: Date | string | null | undefined) {
   if (!value) {
     return "";
   }
-
   if (value instanceof Date) {
     return value.toISOString();
   }
-
   return value;
 }
 
@@ -78,20 +78,6 @@ function buildStationPayload(row?: StationRow | null) {
   };
 }
 
-function buildZeroTrend() {
-  const rows: Array<{ serviceDate: string; rideCount: number; alightCount: number }> = [];
-  for (let offset = 6; offset >= 0; offset -= 1) {
-    const date = new Date();
-    date.setDate(date.getDate() - offset);
-    rows.push({
-      serviceDate: date.toISOString().slice(0, 10),
-      rideCount: 0,
-      alightCount: 0
-    });
-  }
-  return rows;
-}
-
 async function getStationMeta(pool: Pool, stationId: string) {
   const result = await pool.query<StationRow>(
     `
@@ -103,8 +89,8 @@ async function getStationMeta(pool: Pool, stationId: string) {
       s.city_do,
       s.sigungu,
       z.zone_name
-    from dim_station s
-    left join dim_zone z on z.zone_id = s.zone_id
+    from public.dim_station s
+    left join public.dim_zone z on z.zone_id = s.zone_id
     where s.station_id = $1
     limit 1
     `,
@@ -118,21 +104,22 @@ function buildStationOverviewLimitations(hasRows: boolean) {
   if (!hasRows) {
     return [
       "Postgres mode is enabled, but no station_daily facts are materialized yet.",
-      "Run the DB ETL before relying on the production dashboard."
+      "Run the DB ETL before relying on the dashboard."
     ];
   }
 
   return [
     "Dashboard reads materialized station_daily facts from Postgres only.",
-    "Station trend uses the latest materialized daily ridership rows and does not call the public API at request time."
+    "Station trend does not call the public API at request time."
   ];
 }
 
-function buildLivingZoneLimitations(include15MinuteNote: boolean) {
+function buildLivingZoneLimitations(include15MinuteNote: boolean, aggregationLevel: AggregationLevel) {
+  const label = aggregationLevel === "sgg" ? "sgg" : "zone";
   const limitations = [
     "Dashboard reads materialized living-zone OD facts from Postgres only.",
-    "Living-zone OD is based on Sangil-dong area (상일동) public transit flow, not station-to-station OD.",
-    "OD includes general bus and urban rail together because that is the public source grain."
+    "Living-zone OD is based on Sangil-dong area public-transit flow, not station-to-station OD.",
+    `Current OD response is aggregated at ${label} level.`
   ];
 
   if (include15MinuteNote) {
@@ -152,24 +139,22 @@ export class PostgresDashboardRepository implements DashboardRepository {
     }
 
     const [stationCount, dailyOdCount, fifteenCount, latestLoad] = await Promise.all([
-      pool.query<{ count: string }>("select count(*)::text as count from fact_station_daily"),
-      pool.query<{ count: string }>("select count(*)::text as count from fact_living_zone_od_daily"),
-      pool.query<{ count: string }>("select count(*)::text as count from fact_living_zone_od_15min"),
+      pool.query<{ count: string }>("select count(*)::text as count from public.fact_station_daily"),
+      pool.query<{ count: string }>("select count(*)::text as count from public.fact_living_zone_od_daily"),
+      pool.query<{ count: string }>("select count(*)::text as count from public.fact_living_zone_od_15min"),
       pool.query<{ last_loaded_at: Date | null }>(
         `
         select max(last_loaded_at) as last_loaded_at
         from (
-          select max(loaded_at) as last_loaded_at from fact_station_daily
+          select max(loaded_at) as last_loaded_at from public.fact_station_daily
           union all
-          select max(loaded_at) as last_loaded_at from fact_living_zone_od_daily
+          select max(loaded_at) as last_loaded_at from public.fact_living_zone_od_daily
           union all
-          select max(loaded_at) as last_loaded_at from fact_living_zone_od_15min
+          select max(loaded_at) as last_loaded_at from public.fact_living_zone_od_15min
         ) materialized_loads
         `
       )
     ]);
-
-    const lastLoadedAt = toIsoString(latestLoad.rows[0]?.last_loaded_at) || new Date().toISOString();
 
     return {
       data: {
@@ -191,7 +176,7 @@ export class PostgresDashboardRepository implements DashboardRepository {
       meta: {
         sourceNames: ["fact_station_daily", "fact_living_zone_od_daily", "fact_living_zone_od_15min"],
         grainLabel: "db_materialized_dashboard",
-        lastLoadedAt,
+        lastLoadedAt: toIsoString(latestLoad.rows[0]?.last_loaded_at) || new Date().toISOString(),
         dateRange: { from: "", to: "" },
         limitations: [
           `station_daily rows: ${stationCount.rows[0]?.count ?? "0"}`,
@@ -225,13 +210,8 @@ export class PostgresDashboardRepository implements DashboardRepository {
 
     const result = await pool.query<StationDailyRow>(
       `
-      select
-        service_date::text,
-        ride_count,
-        alight_count,
-        loaded_at,
-        source_name
-      from fact_station_daily
+      select service_date::text, ride_count, alight_count, loaded_at, source_name
+      from public.fact_station_daily
       ${whereClause}
       order by service_date asc
       `,
@@ -251,16 +231,6 @@ export class PostgresDashboardRepository implements DashboardRepository {
     const previousAverage = previousWindow.length
       ? previousWindow.reduce((sum, row) => sum + row.ride_count + row.alight_count, 0) / previousWindow.length
       : 0;
-    const weekOverWeekDeltaPct =
-      previousAverage > 0 ? ((rollingAverage - previousAverage) / previousAverage) * 100 : 0;
-
-    const trend = rows.length
-      ? rows.map((row) => ({
-          serviceDate: row.service_date,
-          rideCount: row.ride_count,
-          alightCount: row.alight_count
-        }))
-      : buildZeroTrend();
 
     return {
       data: {
@@ -270,9 +240,13 @@ export class PostgresDashboardRepository implements DashboardRepository {
           latestRideCount: latest?.ride_count ?? 0,
           latestAlightCount: latest?.alight_count ?? 0,
           rollingSevenDayAverage: Math.round(rollingAverage),
-          weekOverWeekDeltaPct: Number(weekOverWeekDeltaPct.toFixed(1))
+          weekOverWeekDeltaPct: previousAverage > 0 ? Number((((rollingAverage - previousAverage) / previousAverage) * 100).toFixed(1)) : 0
         },
-        trend,
+        trend: rows.map((row) => ({
+          serviceDate: row.service_date,
+          rideCount: row.ride_count,
+          alightCount: row.alight_count
+        })),
         qualitySummary: {
           freshnessHours: latest ? 24 : 999,
           stationMatchRate: rows.length ? 100 : 0,
@@ -285,8 +259,8 @@ export class PostgresDashboardRepository implements DashboardRepository {
         grainLabel: "station_daily",
         lastLoadedAt: toIsoString(rows.at(-1)?.loaded_at) || new Date().toISOString(),
         dateRange: {
-          from: trend[0]?.serviceDate ?? "",
-          to: trend.at(-1)?.serviceDate ?? ""
+          from: rows[0]?.service_date ?? "",
+          to: rows.at(-1)?.service_date ?? ""
         },
         limitations: buildStationOverviewLimitations(rows.length > 0),
         queryEcho: query,
@@ -301,18 +275,20 @@ export class PostgresDashboardRepository implements DashboardRepository {
       return localFallback.getHourlyProfile(stationId, query);
     }
 
+    const aggregationLevel = resolveAggregationLevel(query);
     const stationMeta = await getStationMeta(pool, stationId);
     const latestDateResult = await pool.query<{ service_date: string }>(
       `
       select max(service_date)::text as service_date
-      from vw_living_zone_od_15min_latest
-      where aggregation_level = 'zone'
-      `
+      from public.vw_living_zone_od_15min_latest
+      where aggregation_level = $1
+      `,
+      [aggregationLevel]
     );
 
     const latestServiceDate = latestDateResult.rows[0]?.service_date ?? "";
-    const params: unknown[] = [];
-    let whereClause = "where aggregation_level = 'zone'";
+    const params: unknown[] = [aggregationLevel];
+    let whereClause = "where aggregation_level = $1";
 
     if (typeof query.from === "string") {
       params.push(query.from);
@@ -322,7 +298,7 @@ export class PostgresDashboardRepository implements DashboardRepository {
       params.push(query.to);
       whereClause += ` and service_date <= $${params.length}`;
     }
-    if (!params.length && latestServiceDate) {
+    if (params.length === 1 && latestServiceDate) {
       params.push(latestServiceDate);
       whereClause += ` and service_date = $${params.length}`;
     }
@@ -330,16 +306,14 @@ export class PostgresDashboardRepository implements DashboardRepository {
     const rowsResult = await pool.query<LivingZone15MinuteRow>(
       `
       select
-        service_date::text,
-        direction,
         hour_bucket,
+        direction,
         sum(passenger_count)::int as passenger_count,
         max(loaded_at) as loaded_at,
-        min(source_name) as source_name,
-        bool_and(is_verified_snapshot) as is_verified_snapshot
-      from vw_living_zone_od_15min_latest
+        min(source_name) as source_name
+      from public.vw_living_zone_od_15min_latest
       ${whereClause}
-      group by service_date, direction, hour_bucket
+      group by hour_bucket, direction
       order by hour_bucket asc, direction asc
       `,
       params
@@ -356,28 +330,26 @@ export class PostgresDashboardRepository implements DashboardRepository {
       byHour.set(row.hour_bucket, current);
     }
 
-    const rows = [...byHour.entries()].map(([hourBucket, values]) => ({
-      hourBucket,
-      rideCount: values.rideCount,
-      alightCount: values.alightCount
-    }));
-
     return {
       data: {
         station: buildStationPayload(stationMeta),
         analysisScope: sangilLivingZone,
         weekdayType: typeof query.weekdayType === "string" ? query.weekdayType : "all",
-        rows
+        rows: [...byHour.entries()].map(([hourBucket, values]) => ({
+          hourBucket,
+          rideCount: values.rideCount,
+          alightCount: values.alightCount
+        }))
       },
       meta: {
         sourceNames: unique(rowsResult.rows.map((row) => row.source_name)),
-        grainLabel: "living_zone_od_15min",
+        grainLabel: `living_zone_od_15min:${aggregationLevel}`,
         lastLoadedAt: toIsoString(rowsResult.rows.at(-1)?.loaded_at) || new Date().toISOString(),
         dateRange: {
-          from: params[0] && typeof params[0] === "string" ? String(params[0]) : latestServiceDate,
-          to: params.at(-1) && typeof params.at(-1) === "string" ? String(params.at(-1)) : latestServiceDate
+          from: typeof query.from === "string" ? query.from : latestServiceDate,
+          to: typeof query.to === "string" ? query.to : latestServiceDate
         },
-        limitations: buildLivingZoneLimitations(true),
+        limitations: buildLivingZoneLimitations(true, aggregationLevel),
         queryEcho: query,
         fallbackUsed: false
       }
@@ -400,18 +372,19 @@ export class PostgresDashboardRepository implements DashboardRepository {
         : localFallback.getZoneToDestination(query);
     }
 
+    const aggregationLevel = resolveAggregationLevel(query);
     const latestDateResult = await pool.query<{ service_date: string }>(
       `
       select max(service_date)::text as service_date
-      from vw_living_zone_od_daily_latest
-      where direction = $1 and aggregation_level = 'zone'
+      from public.vw_living_zone_od_daily_latest
+      where direction = $1 and aggregation_level = $2
       `,
-      [direction]
+      [direction, aggregationLevel]
     );
 
     const latestServiceDate = latestDateResult.rows[0]?.service_date ?? "";
-    const params: unknown[] = [direction];
-    let whereClause = "where direction = $1 and aggregation_level = 'zone'";
+    const params: unknown[] = [direction, aggregationLevel];
+    let whereClause = "where direction = $1 and aggregation_level = $2";
 
     if (typeof query.from === "string") {
       params.push(query.from);
@@ -421,7 +394,7 @@ export class PostgresDashboardRepository implements DashboardRepository {
       params.push(query.to);
       whereClause += ` and service_date <= $${params.length}`;
     }
-    if (params.length === 1 && latestServiceDate) {
+    if (params.length === 2 && latestServiceDate) {
       params.push(latestServiceDate);
       whereClause += ` and service_date = $${params.length}`;
     }
@@ -434,10 +407,8 @@ export class PostgresDashboardRepository implements DashboardRepository {
         sum(passenger_count)::int as passenger_count,
         max(share_pct) as share_pct,
         max(loaded_at) as loaded_at,
-        min(source_name) as source_name,
-        bool_and(is_verified_snapshot) as is_verified_snapshot,
-        max(service_date)::text as service_date
-      from vw_living_zone_od_daily_latest
+        min(source_name) as source_name
+      from public.vw_living_zone_od_daily_latest
       ${whereClause}
       group by target_label
       order by passenger_count desc
@@ -446,14 +417,8 @@ export class PostgresDashboardRepository implements DashboardRepository {
     );
 
     const total = result.rows.reduce((sum, row) => sum + row.passenger_count, 0);
-    const rows = result.rows.map((row) => ({
-      zoneName: row.target_label,
-      passengerCount: row.passenger_count,
-      sharePct: total > 0 ? Number(((row.passenger_count / total) * 100).toFixed(1)) : Number(row.share_pct ?? 0),
-      topContextLabel: row.top_context_label
-    }));
 
-    const response = {
+    return {
       data: {
         station: sangilStation,
         analysisScope: sangilLivingZone,
@@ -461,23 +426,26 @@ export class PostgresDashboardRepository implements DashboardRepository {
           from: typeof query.from === "string" ? query.from : latestServiceDate,
           to: typeof query.to === "string" ? query.to : latestServiceDate
         },
-        rows
+        rows: result.rows.map((row) => ({
+          zoneName: row.target_label,
+          passengerCount: row.passenger_count,
+          sharePct: total > 0 ? Number(((row.passenger_count / total) * 100).toFixed(1)) : Number(row.share_pct ?? 0),
+          topContextLabel: row.top_context_label
+        }))
       },
       meta: {
         sourceNames: unique(result.rows.map((row) => row.source_name)),
-        grainLabel: "living_zone_od_daily",
+        grainLabel: `living_zone_od_daily:${aggregationLevel}`,
         lastLoadedAt: toIsoString(result.rows.at(-1)?.loaded_at) || new Date().toISOString(),
         dateRange: {
           from: typeof query.from === "string" ? query.from : latestServiceDate,
           to: typeof query.to === "string" ? query.to : latestServiceDate
         },
-        limitations: buildLivingZoneLimitations(false),
+        limitations: buildLivingZoneLimitations(false, aggregationLevel),
         queryEcho: query,
         fallbackUsed: false
       }
     };
-
-    return response;
   }
 
   async getDataQualitySummary(stationId: string) {
@@ -487,11 +455,11 @@ export class PostgresDashboardRepository implements DashboardRepository {
       return localFallback.getDataQualitySummary(stationId);
     }
 
-    const [stationDaily, dailyOd, fifteenOd, latestLoad] = await Promise.all([
+    const [stationDaily, zoneDaily, sggDaily, zoneFifteen, sggFifteen, latestLoad] = await Promise.all([
       pool.query<{ count: string; latest_date: string | null }>(
         `
         select count(*)::text as count, max(service_date)::text as latest_date
-        from fact_station_daily
+        from public.fact_station_daily
         where station_id = 'sangil-5-551'
         `
       ),
@@ -501,40 +469,58 @@ export class PostgresDashboardRepository implements DashboardRepository {
           count(*)::text as count,
           max(service_date)::text as latest_date,
           sum(case when is_verified_snapshot then 1 else 0 end)::text as snapshot_rows
-        from vw_living_zone_od_daily_latest
+        from public.vw_living_zone_od_daily_latest
+        where aggregation_level = 'zone'
         `
       ),
-      pool.query<{ count: string; latest_date: string | null }>(
+      pool.query<{ count: string }>(
         `
-        select count(*)::text as count, max(service_date)::text as latest_date
-        from vw_living_zone_od_15min_latest
+        select count(*)::text as count
+        from public.vw_living_zone_od_daily_latest
+        where aggregation_level = 'sgg'
+        `
+      ),
+      pool.query<{ count: string }>(
+        `
+        select count(*)::text as count
+        from public.vw_living_zone_od_15min_latest
+        where aggregation_level = 'zone'
+        `
+      ),
+      pool.query<{ count: string }>(
+        `
+        select count(*)::text as count
+        from public.vw_living_zone_od_15min_latest
+        where aggregation_level = 'sgg'
         `
       ),
       pool.query<{ last_loaded_at: Date | null }>(
         `
         select max(last_loaded_at) as last_loaded_at
         from (
-          select max(loaded_at) as last_loaded_at from fact_station_daily
+          select max(loaded_at) as last_loaded_at from public.fact_station_daily
           union all
-          select max(loaded_at) as last_loaded_at from fact_living_zone_od_daily
+          select max(loaded_at) as last_loaded_at from public.fact_living_zone_od_daily
           union all
-          select max(loaded_at) as last_loaded_at from fact_living_zone_od_15min
+          select max(loaded_at) as last_loaded_at from public.fact_living_zone_od_15min
         ) materialized_loads
         `
       )
     ]);
 
-    const dailySnapshotRows = Number(dailyOd.rows[0]?.snapshot_rows ?? 0);
     const warnings = [
       "Dashboard runtime reads Postgres facts only. Public APIs are queried by ETL, not by request handlers.",
       "Ridership remains station_daily while OD remains living-zone_daily; the two grains are intentionally separated."
     ];
 
-    if (Number(fifteenOd.rows[0]?.count ?? 0) === 0) {
+    if (Number(zoneFifteen.rows[0]?.count ?? 0) === 0) {
       warnings.push("15-minute OD facts are not materialized yet. The temporal panel will keep the DB-backed empty state.");
     }
-    if (dailySnapshotRows > 0) {
-      warnings.push("Some living-zone OD rows still come from a verified snapshot because the public OD API was not stable at capture time.");
+    if (Number(sggDaily.rows[0]?.count ?? 0) === 0) {
+      warnings.push("SGG-level OD rows are not materialized yet. Tomorrow's live refresh can populate finer-grained views.");
+    }
+    if (Number(zoneDaily.rows[0]?.snapshot_rows ?? 0) > 0) {
+      warnings.push("Some living-zone OD zone rows still come from a verified snapshot because the public OD API was not stable at capture time.");
     }
 
     return {
@@ -547,26 +533,12 @@ export class PostgresDashboardRepository implements DashboardRepository {
         metrics: [
           { label: "Data mode", value: "postgres", status: "good" as const },
           { label: "Station daily rows", value: stationDaily.rows[0]?.count ?? "0", status: "good" as const },
-          {
-            label: "Living-zone OD daily rows",
-            value: dailyOd.rows[0]?.count ?? "0",
-            status: Number(dailyOd.rows[0]?.count ?? 0) > 0 ? "good" as const : "critical" as const
-          },
-          {
-            label: "Living-zone OD 15min rows",
-            value: fifteenOd.rows[0]?.count ?? "0",
-            status: Number(fifteenOd.rows[0]?.count ?? 0) > 0 ? "good" as const : "warning" as const
-          },
-          {
-            label: "Latest station date",
-            value: stationDaily.rows[0]?.latest_date ?? "-",
-            status: "good" as const
-          },
-          {
-            label: "Latest OD date",
-            value: dailyOd.rows[0]?.latest_date ?? "-",
-            status: "warning" as const
-          }
+          { label: "OD zone rows", value: zoneDaily.rows[0]?.count ?? "0", status: Number(zoneDaily.rows[0]?.count ?? 0) > 0 ? "good" as const : "critical" as const },
+          { label: "OD sgg rows", value: sggDaily.rows[0]?.count ?? "0", status: Number(sggDaily.rows[0]?.count ?? 0) > 0 ? "good" as const : "warning" as const },
+          { label: "15min zone rows", value: zoneFifteen.rows[0]?.count ?? "0", status: Number(zoneFifteen.rows[0]?.count ?? 0) > 0 ? "good" as const : "warning" as const },
+          { label: "15min sgg rows", value: sggFifteen.rows[0]?.count ?? "0", status: Number(sggFifteen.rows[0]?.count ?? 0) > 0 ? "good" as const : "warning" as const },
+          { label: "Latest station date", value: stationDaily.rows[0]?.latest_date ?? "-", status: "good" as const },
+          { label: "Latest OD date", value: zoneDaily.rows[0]?.latest_date ?? "-", status: "warning" as const }
         ]
       },
       meta: {
@@ -575,7 +547,7 @@ export class PostgresDashboardRepository implements DashboardRepository {
         lastLoadedAt: toIsoString(latestLoad.rows[0]?.last_loaded_at) || new Date().toISOString(),
         dateRange: {
           from: stationDaily.rows[0]?.latest_date ?? "",
-          to: dailyOd.rows[0]?.latest_date ?? ""
+          to: zoneDaily.rows[0]?.latest_date ?? ""
         },
         limitations: warnings,
         queryEcho: {},
@@ -593,7 +565,7 @@ export class PostgresDashboardRepository implements DashboardRepository {
     const result = await pool.query<{ station_id: string; station_name: string }>(
       `
       select station_id, station_name
-      from dim_station
+      from public.dim_station
       where $1 = '' or station_name ilike '%' || $1 || '%'
       order by station_name asc
       limit 20
@@ -616,7 +588,7 @@ export class PostgresDashboardRepository implements DashboardRepository {
     const result = await pool.query<{ zone_name: string }>(
       `
       select zone_name
-      from dim_zone
+      from public.dim_zone
       where is_active = true
       order by sort_order asc, zone_name asc
       `

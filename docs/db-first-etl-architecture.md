@@ -31,6 +31,11 @@ The dashboard should read Postgres only. Public APIs are handled by ETL jobs and
   - `is_verified_snapshot`
   - `loaded_at`
 
+This fact now supports both:
+
+- `aggregation_level='zone'`
+- `aggregation_level='sgg'`
+
 ### Living-zone OD 15-minute fact
 
 - `fact_living_zone_od_15min`
@@ -47,6 +52,8 @@ The dashboard should read Postgres only. Public APIs are handled by ETL jobs and
   - `source_name`
   - `is_verified_snapshot`
   - `loaded_at`
+
+This fact is prepared for both `zone` and `sgg` materialization once the next live refresh succeeds.
 
 ### Read views
 

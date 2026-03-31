@@ -10,17 +10,22 @@ from etl.common.logging import get_logger
 from etl.config import get_settings
 from etl.contracts import EvidenceRecord, EtlRunManifest, EventRecord, RunRecord, TaskRecord
 from etl.extract.dashboard_sources import (
-    capture_live_od_15min_snapshot,
-    capture_live_od_daily_snapshots,
     fetch_seoul_station_daily,
     load_verified_snapshot,
     save_verified_snapshot,
+)
+from etl.extract.molit_od_materialization import (
+    build_zone_snapshots_from_materialization,
+    capture_15min_materialization,
+    capture_daily_materialization,
 )
 from etl.load.postgres_loader import PostgresDashboardLoader
 from etl.repositories.local_store import LocalRuntimeStore
 from etl.transform.dashboard_transform import (
     build_living_zone_od_15min_fact_rows,
+    build_living_zone_od_15min_fact_rows_from_materialization,
     build_living_zone_od_daily_fact_rows,
+    build_living_zone_od_daily_fact_rows_from_materialization,
     build_station_daily_fact_rows,
 )
 
@@ -83,41 +88,53 @@ def main(argv: list[str] | None = None) -> int:
     inbound_snapshot: dict
     outbound_snapshot_path = settings.verified_snapshot_path / "origin-to-zone.json"
     inbound_snapshot_path = settings.verified_snapshot_path / "zone-to-destination.json"
+    materialization_path = settings.verified_snapshot_path / "living-zone-od-materialization.json"
+    live_daily_materialization: dict | None = None
 
     if args.refresh_live_od:
         try:
-            live_outbound, live_inbound = capture_live_od_daily_snapshots()
+            live_daily_materialization = capture_daily_materialization()
+            live_outbound, live_inbound = build_zone_snapshots_from_materialization(live_daily_materialization)
             outbound_snapshot_path = save_verified_snapshot("origin-to-zone.json", live_outbound)
             inbound_snapshot_path = save_verified_snapshot("zone-to-destination.json", live_inbound)
+            materialization_path = save_verified_snapshot("living-zone-od-materialization.json", live_daily_materialization)
         except Exception as error:
             warnings.append(f"Daily OD live refresh failed; using last verified snapshot. ({error})")
 
     outbound_snapshot = load_verified_snapshot("origin-to-zone.json")
     inbound_snapshot = load_verified_snapshot("zone-to-destination.json")
     evidence_paths.extend([str(outbound_snapshot_path), str(inbound_snapshot_path)])
+    if live_daily_materialization:
+        evidence_paths.append(str(materialization_path))
 
-    daily_od_rows = build_living_zone_od_daily_fact_rows(outbound_snapshot, "outbound")
-    daily_od_rows.extend(build_living_zone_od_daily_fact_rows(inbound_snapshot, "inbound"))
+    if live_daily_materialization:
+        daily_od_rows = build_living_zone_od_daily_fact_rows_from_materialization(live_daily_materialization)
+    else:
+        daily_od_rows = build_living_zone_od_daily_fact_rows(outbound_snapshot, "outbound")
+        daily_od_rows.extend(build_living_zone_od_daily_fact_rows(inbound_snapshot, "inbound"))
 
     hourly_snapshot_path = settings.verified_snapshot_path / "living-zone-15min.json"
+    hourly_materialization_path = settings.verified_snapshot_path / "living-zone-15min-materialization.json"
     hourly_rows: list[dict] = []
     if args.refresh_live_15min:
         try:
             tracked_hours = tuple(int(value.strip()) for value in args.hours.split(",") if value.strip())
-            live_15min = capture_live_od_15min_snapshot(
-                outbound_snapshot["data"]["dateRange"]["to"].replace("-", ""),
-                {
-                    "outbound": outbound_snapshot["data"]["rows"],
-                    "inbound": inbound_snapshot["data"]["rows"],
-                },
+            daily_materialization = live_daily_materialization or load_verified_snapshot("living-zone-od-materialization.json")
+            live_15min = capture_15min_materialization(
+                daily_materialization["serviceDate"],
+                daily_materialization["dailyRows"],
                 top_n=args.top_n,
                 tracked_hours=tracked_hours,
             )
-            hourly_snapshot_path = save_verified_snapshot("living-zone-15min.json", live_15min)
+            hourly_materialization_path = save_verified_snapshot("living-zone-15min-materialization.json", live_15min)
         except Exception as error:
             warnings.append(f"15-minute OD live refresh failed; keeping prior materialized rows. ({error})")
 
-    if hourly_snapshot_path.exists():
+    if hourly_materialization_path.exists():
+        hourly_snapshot = load_verified_snapshot("living-zone-15min-materialization.json")
+        hourly_rows = build_living_zone_od_15min_fact_rows_from_materialization(hourly_snapshot)
+        evidence_paths.append(str(hourly_materialization_path))
+    elif hourly_snapshot_path.exists():
         hourly_snapshot = load_verified_snapshot("living-zone-15min.json")
         hourly_rows = build_living_zone_od_15min_fact_rows(hourly_snapshot)
         evidence_paths.append(str(hourly_snapshot_path))
@@ -163,8 +180,8 @@ def main(argv: list[str] | None = None) -> int:
         },
         "status": status,
         "batchStrategy": {
-            "daily": "Refresh station_daily and living_zone_od_daily once per batch. Dashboard reads the latest materialized facts only.",
-            "fifteenMinute": "Optional batch. Capture only top daily zones and only tracked commute hours to stay below OD API quota.",
+            "daily": "Refresh station_daily plus living_zone_od_daily for both zone and sgg aggregation levels in one batch. Dashboard reads the latest materialized facts only.",
+            "fifteenMinute": "Optional batch. Capture only top daily zone/sgg destinations and only tracked commute hours to stay below OD API quota.",
         },
         "warnings": warnings,
         "evidencePaths": evidence_paths,

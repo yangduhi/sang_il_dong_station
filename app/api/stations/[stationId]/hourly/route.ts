@@ -12,7 +12,8 @@ export async function GET(
   const query = hourlyQuerySchema.parse({
     from: request.nextUrl.searchParams.get("from") ?? undefined,
     to: request.nextUrl.searchParams.get("to") ?? undefined,
-    weekdayType: request.nextUrl.searchParams.get("weekdayType") ?? undefined
+    weekdayType: request.nextUrl.searchParams.get("weekdayType") ?? undefined,
+    aggregationLevel: request.nextUrl.searchParams.get("aggregationLevel") ?? undefined
   });
 
   const repository = getDashboardRepository();

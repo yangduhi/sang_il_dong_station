@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const weekdayTypeSchema = z.enum(["all", "weekday", "weekend"]).default("all");
+export const aggregationLevelSchema = z.enum(["zone", "sgg"]).default("zone");
 
 export const passengerTypeSchema = z.enum([
   "all",
@@ -17,7 +18,8 @@ export const stationOverviewQuerySchema = z.object({
 });
 
 export const hourlyQuerySchema = stationOverviewQuerySchema.extend({
-  weekdayType: weekdayTypeSchema.optional()
+  weekdayType: weekdayTypeSchema.optional(),
+  aggregationLevel: aggregationLevelSchema.optional()
 });
 
 export const odQuerySchema = z.object({
@@ -25,7 +27,8 @@ export const odQuerySchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   weekdayType: weekdayTypeSchema.optional(),
-  passengerType: passengerTypeSchema.optional()
+  passengerType: passengerTypeSchema.optional(),
+  aggregationLevel: aggregationLevelSchema.optional()
 });
 
 export const stationSearchQuerySchema = z.object({

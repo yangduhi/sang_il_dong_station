@@ -96,3 +96,37 @@ export const zoneVisuals: Record<string, ZoneVisual> = {
     polygon: "870,474 956,482 984,542 936,596 858,586 834,528"
   }
 };
+
+function buildFallbackPolygon(centerX: number, centerY: number) {
+  const size = 24;
+  return [
+    `${centerX},${centerY - size}`,
+    `${centerX + size},${centerY}`,
+    `${centerX},${centerY + size}`,
+    `${centerX - size},${centerY}`
+  ].join(" ");
+}
+
+export function resolveFlowVisual(zoneName: string, index: number, total: number): ZoneVisual {
+  const exact = zoneVisuals[zoneName];
+  if (exact) {
+    return exact;
+  }
+
+  const angle = ((Math.PI * 2) / Math.max(total, 1)) * index - Math.PI / 2;
+  const ringRadius = 235;
+  const center = {
+    x: mapFocusPoint.x - 140 + Math.cos(angle) * ringRadius,
+    y: mapFocusPoint.y + 140 + Math.sin(angle) * ringRadius
+  };
+
+  return {
+    zoneName,
+    center,
+    label: {
+      x: center.x + 18,
+      y: center.y - 14
+    },
+    polygon: buildFallbackPolygon(center.x, center.y)
+  };
+}

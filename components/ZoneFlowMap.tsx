@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { mapFocusPoint, zoneVisuals } from "@/lib/data/zone-visuals";
+import { mapFocusPoint, resolveFlowVisual } from "@/lib/data/zone-visuals";
 
-type ZoneRow = {
+type FlowRow = {
   zoneName: string;
   passengerCount: number;
   sharePct: number;
@@ -14,8 +14,8 @@ type ZoneFlowMapProps = {
   title: string;
   subtitle: string;
   scopeLabel: string;
-  outboundRows: ZoneRow[];
-  inboundRows: ZoneRow[];
+  outboundRows: FlowRow[];
+  inboundRows: FlowRow[];
 };
 
 type Mode = "outbound" | "inbound";
@@ -24,22 +24,21 @@ const modeCopy: Record<Mode, { label: string; accent: string; text: string }> = 
   outbound: {
     label: "유출",
     accent: "#34d399",
-    text: "상일동 생활권에서 각 권역으로 이동한 대중교통 흐름"
+    text: "상일동 생활권에서 각 대상지로 이동하는 흐름"
   },
   inbound: {
     label: "유입",
     accent: "#f59e0b",
-    text: "각 권역에서 상일동 생활권으로 들어온 대중교통 흐름"
+    text: "각 대상지에서 상일동 생활권으로 들어오는 흐름"
   }
 };
 
-function pathFromFocusToZone(mode: Mode, zoneName: string) {
-  const visual = zoneVisuals[zoneName] ?? zoneVisuals["기타"];
-  const source = mode === "outbound" ? mapFocusPoint : visual.center;
-  const target = mode === "outbound" ? visual.center : mapFocusPoint;
-  const midX = (source.x + target.x) / 2;
-  const midY = (source.y + target.y) / 2 - Math.abs(target.x - source.x) * 0.14;
-  return `M ${source.x} ${source.y} Q ${midX} ${midY} ${target.x} ${target.y}`;
+function buildPath(mode: Mode, target: { x: number; y: number }) {
+  const source = mode === "outbound" ? mapFocusPoint : target;
+  const destination = mode === "outbound" ? target : mapFocusPoint;
+  const midX = (source.x + destination.x) / 2;
+  const midY = (source.y + destination.y) / 2 - Math.abs(destination.x - source.x) * 0.14;
+  return `M ${source.x} ${source.y} Q ${midX} ${midY} ${destination.x} ${destination.y}`;
 }
 
 function intensity(passengerCount: number, max: number) {
@@ -55,21 +54,21 @@ export function ZoneFlowMap({
   inboundRows
 }: ZoneFlowMapProps) {
   const [mode, setMode] = useState<Mode>("outbound");
-  const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
 
   const rows = mode === "outbound" ? outboundRows : inboundRows;
   const max = Math.max(1, ...rows.map((row) => row.passengerCount));
 
-  const selectedRow = rows.find((row) => row.zoneName === selectedZone) ?? rows[0] ?? null;
-
   const visualRows = useMemo(
     () =>
-      rows.map((row) => ({
+      rows.map((row, index) => ({
         ...row,
-        visual: zoneVisuals[row.zoneName] ?? zoneVisuals["기타"]
+        visual: resolveFlowVisual(row.zoneName, index, rows.length)
       })),
     [rows]
   );
+
+  const selectedRow = visualRows.find((row) => row.zoneName === selectedLabel) ?? visualRows[0] ?? null;
 
   return (
     <section className="relative overflow-hidden rounded-[36px] border border-white/10 bg-[#07101b] shadow-[0_40px_120px_rgba(2,6,23,0.55)]">
@@ -140,7 +139,7 @@ export function ZoneFlowMap({
                       strokeWidth={active ? 2.6 : 1.2}
                       filter="url(#zoneGlow)"
                       className="cursor-pointer transition-all"
-                      onClick={() => setSelectedZone(row.zoneName)}
+                      onClick={() => setSelectedLabel(row.zoneName)}
                     />
                     <text
                       x={row.visual.label.x}
@@ -157,13 +156,12 @@ export function ZoneFlowMap({
 
               {visualRows.map((row) => {
                 const active = selectedRow?.zoneName === row.zoneName;
-                const stroke = modeCopy[mode].accent;
                 return (
                   <path
                     key={`${mode}-${row.zoneName}`}
-                    d={pathFromFocusToZone(mode, row.zoneName)}
+                    d={buildPath(mode, row.visual.center)}
                     fill="none"
-                    stroke={stroke}
+                    stroke={modeCopy[mode].accent}
                     strokeWidth={active ? 5 + row.sharePct / 10 : 2 + row.sharePct / 18}
                     opacity={active ? 0.96 : 0.34 + row.sharePct / 130}
                     strokeLinecap="round"
@@ -189,21 +187,17 @@ export function ZoneFlowMap({
           <aside className="flex flex-col gap-4">
             <div className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur-md">
               <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/70">Selected flow</p>
-              <h3 className="mt-3 text-2xl font-semibold text-white">
-                {selectedRow?.zoneName ?? "권역 선택"}
-              </h3>
+              <h3 className="mt-3 text-2xl font-semibold text-white">{selectedRow?.zoneName ?? "항목 선택"}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-300">
                 {selectedRow
-                  ? `${scopeLabel} 기준 ${mode === "outbound" ? "도착" : "출발"} 대표 생활권은 ${selectedRow.topContextLabel} 입니다.`
-                  : "지도의 권역을 선택하면 대표 생활권과 비중을 더 자세히 볼 수 있습니다."}
+                  ? `${scopeLabel} 기준 ${mode === "outbound" ? "유출" : "유입"} 대상의 대표 생활권은 ${selectedRow.topContextLabel} 입니다.`
+                  : "지도의 항목을 선택하면 대표 생활권과 비중을 더 자세히 볼 수 있습니다."}
               </p>
               {selectedRow ? (
                 <div className="mt-5 grid gap-3">
                   <div className="rounded-2xl border border-white/10 bg-black/15 px-4 py-3">
                     <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Passenger volume</div>
-                    <div className="mt-2 text-2xl font-semibold text-white">
-                      {selectedRow.passengerCount.toLocaleString()}명
-                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-white">{selectedRow.passengerCount.toLocaleString()}명</div>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/15 px-4 py-3">
                     <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Share</div>
@@ -216,9 +210,9 @@ export function ZoneFlowMap({
             <div className="rounded-[28px] border border-white/10 bg-black/18 p-5">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Layer notes</p>
               <ul className="mt-4 space-y-3 text-sm text-slate-300">
-                <li>권역 색상은 선택한 모드의 상대적 강도를 뜻합니다.</li>
-                <li>흐름선은 생활권과 권역 centroid를 잇는 개념도입니다.</li>
-                <li>현재 맵은 1차 버전으로, Arc/Heat/Trips를 겹치지 않고 단일 메시지만 보여줍니다.</li>
+                <li>권역 라벨이 아닌 구/시 라벨이 와도 fallback 위치를 생성하도록 준비했습니다.</li>
+                <li>zone 데이터는 기존 polygon 위치를, sgg 데이터는 ring layout fallback을 사용합니다.</li>
+                <li>내일 sgg 적재가 들어오면 이 맵 레이어가 같은 컴포넌트에서 그대로 받을 수 있습니다.</li>
               </ul>
             </div>
           </aside>
