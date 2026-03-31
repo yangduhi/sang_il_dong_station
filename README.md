@@ -73,6 +73,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\preflight.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1
 ```
 
+## Live source inspection
+
+```powershell
+.\.venv\Scripts\python.exe .\scripts\inspect_sources\check_live_sources.py
+```
+
+The latest summary is written to:
+
+- `docs/reports/live-source-check-latest.md`
+- `docs/reports/live-source-check-latest.json`
+
 ## Development flow
 
 1. Start from the operating contract in [`AGENTS.md`](./AGENTS.md).

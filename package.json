@@ -20,6 +20,7 @@
     "etl:health": "py -3.11 -m etl.jobs.healthcheck",
     "etl:sample": "py -3.11 -m etl.jobs.run_sample_pipeline",
     "etl:quality": "py -3.11 -m etl.jobs.run_quality_gate",
+    "inspect:live": "py -3.11 .\\scripts\\inspect_sources\\check_live_sources.py",
     "preflight": "powershell -ExecutionPolicy Bypass -File ./scripts/preflight.ps1",
     "verify": "powershell -ExecutionPolicy Bypass -File ./scripts/verify.ps1"
   },

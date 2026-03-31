@@ -1,0 +1,48 @@
+{
+  "checkedAt": "2026-03-31",
+  "appDataMode": "local",
+  "appSourceMode": "sample",
+  "sources": {
+    "seoulDailyRidership": {
+      "status": "ok",
+      "sourceName": "CardSubwayStatsNew",
+      "probeDate": "20260327",
+      "rowCount": 618,
+      "line5Count": 56,
+      "stationFound": true,
+      "stationRows": [
+        {
+          "USE_YMD": "20260327",
+          "SBWY_ROUT_LN_NM": "5호선",
+          "SBWY_STNS_NM": "상일동",
+          "GTON_TNOPE": "17354",
+          "GTOFF_TNOPE": "16224",
+          "REG_YMD": "20260330"
+        }
+      ],
+      "tailLine5StationNames": [
+        "명일",
+        "고덕",
+        "상일동",
+        "둔촌동",
+        "올림픽공원(한국체대)",
+        "방이",
+        "오금",
+        "개롱",
+        "거여",
+        "마천",
+        "강일",
+        "미사",
+        "하남풍산",
+        "하남시청(덕풍·신장)",
+        "하남검단산"
+      ],
+      "rawResultCode": "INFO-000"
+    },
+    "molitOd": {
+      "status": "not_yet_verified",
+      "reason": "The repository has not implemented a callable endpoint test for the MOLIT/data.go.kr OD API yet. Public STCIS docs currently expose a 15-minute regional OD dev endpoint, not a confirmed station-level OD contract for this project.",
+      "serviceKeyPresent": true
+    }
+  }
+}
