@@ -17,6 +17,12 @@ coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo
+docs/changes/
+docs/conversations/
+docs/sessions/
+docs/reports/.sync_codex_cache.json
+docs/reports/conversations.md
+docs/reports/memory.md
 
 # Environment
 .env

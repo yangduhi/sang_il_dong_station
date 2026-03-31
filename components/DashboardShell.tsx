@@ -1,3 +1,6 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { DataQualityPanel } from "@/components/DataQualityPanel";
 import { HourlyProfile } from "@/components/HourlyProfile";
 import { KpiCards } from "@/components/KpiCards";
@@ -5,29 +8,55 @@ import { OdBarChart } from "@/components/OdBarChart";
 import { SectionCard } from "@/components/SectionCard";
 import { TrendChart } from "@/components/TrendChart";
 import { ZoneFlowMap } from "@/components/ZoneFlowMap";
-import type {
-  DataQualitySummaryResponse,
-  HourlyProfileResponse,
-  OdOriginToZoneResponse,
-  OdZoneToDestinationResponse,
-  StationOverviewResponse
-} from "@/lib/schemas/responses";
+import type { DataQualitySummaryResponse, HourlyProfileResponse, OdOriginToZoneResponse, OdZoneToDestinationResponse, StationOverviewResponse } from "@/lib/schemas/responses";
+
+type GranularityKey = "zone" | "sgg";
 
 type DashboardShellProps = {
   overview: StationOverviewResponse;
-  hourly: HourlyProfileResponse;
-  originToZone: OdOriginToZoneResponse;
-  zoneToDestination: OdZoneToDestinationResponse;
+  granularities: Record<
+    GranularityKey,
+    {
+      originToZone: OdOriginToZoneResponse;
+      zoneToDestination: OdZoneToDestinationResponse;
+      hourly: HourlyProfileResponse;
+    }
+  >;
   quality: DataQualitySummaryResponse;
 };
 
-export function DashboardShell({
-  overview,
-  hourly,
-  originToZone,
-  zoneToDestination,
-  quality
-}: DashboardShellProps) {
+const granularityCopy: Record<
+  GranularityKey,
+  { label: string; title: string; subtitle: string }
+> = {
+  sgg: {
+    label: "구·시",
+    title: "구·시 단위 OD",
+    subtitle: "현재 데이터 grain과 가장 잘 맞는 서울 자치구 / 경기 시군 기준 흐름입니다."
+  },
+  zone: {
+    label: "권역",
+    title: "권역 요약 OD",
+    subtitle: "넓은 방향성을 빠르게 읽는 요약 시점입니다."
+  }
+};
+
+function chooseInitialGranularity(granularities: DashboardShellProps["granularities"]): GranularityKey {
+  return granularities.sgg.originToZone.data.rows.length > 0 ? "sgg" : "zone";
+}
+
+export function DashboardShell({ overview, granularities, quality }: DashboardShellProps) {
+  const [granularity, setGranularity] = useState<GranularityKey>(() => chooseInitialGranularity(granularities));
+  const active = granularities[granularity];
+  const sggReady = granularities.sgg.originToZone.data.rows.length > 0;
+
+  const headerNote = useMemo(() => {
+    if (sggReady) {
+      return "기본 뷰는 구·시 단위입니다. 필요할 때만 권역 요약으로 압축해서 볼 수 있습니다.";
+    }
+    return "구·시 단위 적재는 준비되어 있고, 현재는 권역 요약 데이터가 먼저 표시됩니다. 내일 live OD 재적재 후 구·시가 기본으로 전환됩니다.";
+  }, [sggReady]);
+
   return (
     <main className="min-h-screen bg-[#040814] text-white">
       <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-6 px-4 py-5 md:px-8 md:py-8">
@@ -39,16 +68,17 @@ export function DashboardShell({
               <h1 className="mt-3 text-3xl font-semibold leading-tight text-white md:text-6xl">
                 상일동역 승하차 추세와
                 <br />
-                상일동 생활권 OD를 한 화면에서 읽는 지도형 대시보드
+                상일동 생활권 OD를 지도 중심으로 읽는 대시보드
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">
-                역 단위 승하차 추세와 생활권 기반 대중교통 OD를 분리해서 보여줍니다.
-                상단 메인 맵은 상일동 생활권과 서울·경기 권역 사이의 흐름을 보여주고,
-                하단 분석 영역은 상일동역 자체의 규모와 품질 메모를 정리합니다.
+                역 단위 승하차 추세와 생활권 기반 대중교통 OD를 분리해 보여줍니다. 상단 메인 맵은 상일동
+                생활권과 서울·경기 대상지 사이의 흐름을 먼저 보여주고, 하단 분석 영역은 상일동역 자체의
+                규모와 적재 상태를 같이 설명합니다.
               </p>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-cyan-100/80">{headerNote}</p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[360px]">
+            <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[420px]">
               <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-400">승하차 범위</p>
                 <p className="mt-2 text-lg font-semibold text-white">{overview.data.analysisScope.scopeLabel}</p>
@@ -56,48 +86,75 @@ export function DashboardShell({
               </div>
               <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-400">OD 범위</p>
-                <p className="mt-2 text-lg font-semibold text-white">{originToZone.data.analysisScope.scopeLabel}</p>
-                <p className="mt-1 text-sm text-slate-300">{originToZone.data.analysisScope.description}</p>
+                <p className="mt-2 text-lg font-semibold text-white">{active.originToZone.data.analysisScope.scopeLabel}</p>
+                <p className="mt-1 text-sm text-slate-300">{granularityCopy[granularity].subtitle}</p>
               </div>
             </div>
           </div>
         </section>
 
+        <section className="flex flex-wrap items-center justify-between gap-4 rounded-[28px] border border-white/10 bg-[#07101b] px-5 py-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">OD granularity</p>
+            <p className="mt-2 text-sm text-slate-300">{granularityCopy[granularity].title}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {(Object.keys(granularityCopy) as GranularityKey[]).map((key) => {
+              const disabled = key === "sgg" && !sggReady;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setGranularity(key)}
+                  className={`rounded-full border px-4 py-2 text-sm transition ${
+                    granularity === key
+                      ? "border-white/40 bg-white/12 text-white"
+                      : "border-white/10 bg-black/15 text-slate-300 hover:border-white/25"
+                  } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                >
+                  {granularityCopy[key].label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <ZoneFlowMap
-            title="상일동 생활권 OD 맵"
-            subtitle="생활권 중심의 대중교통 흐름을 권역 레벨로 단순화해, 공간 관계가 먼저 읽히도록 설계했습니다."
-            scopeLabel={originToZone.data.analysisScope.scopeLabel}
-            outboundRows={originToZone.data.rows}
-            inboundRows={zoneToDestination.data.rows}
+            title={`${granularityCopy[granularity].label} 기준 상일동 생활권 OD 맵`}
+            subtitle={granularityCopy[granularity].subtitle}
+            scopeLabel={active.originToZone.data.analysisScope.scopeLabel}
+            outboundRows={active.originToZone.data.rows}
+            inboundRows={active.zoneToDestination.data.rows}
           />
 
           <aside className="space-y-6">
             <SectionCard
               eyebrow="Insights"
-              title="주요 도착 권역"
-              subtitle="상일동 생활권에서 바깥으로 나갈 때 도착 비중이 높은 권역입니다."
+              title={`주요 도착 ${granularityCopy[granularity].label}`}
+              subtitle="상일동 생활권에서 나갈 때 도착 비중이 높은 대상지입니다."
             >
-              <OdBarChart rows={originToZone.data.rows.slice(0, 6)} directionLabel="origin-to-zone-side" />
+              <OdBarChart rows={active.originToZone.data.rows.slice(0, 6)} directionLabel={`origin-${granularity}`} />
             </SectionCard>
 
             <SectionCard
               eyebrow="Return"
-              title="주요 유입 권역"
-              subtitle="외부 권역에서 상일동 생활권으로 유입되는 흐름입니다."
+              title={`주요 유입 ${granularityCopy[granularity].label}`}
+              subtitle="외부에서 상일동 생활권으로 들어오는 비중이 높은 대상지입니다."
             >
-              <OdBarChart rows={zoneToDestination.data.rows.slice(0, 6)} directionLabel="zone-to-destination-side" />
+              <OdBarChart rows={active.zoneToDestination.data.rows.slice(0, 6)} directionLabel={`inbound-${granularity}`} />
             </SectionCard>
 
             <SectionCard
               eyebrow="Layers"
               title="표현 메모"
-              subtitle="첫 화면은 맵 중심으로 읽히고, 해석 문장은 오른쪽 레일에서 바로 따라옵니다."
+              subtitle="같은 데이터 경로를 유지하면서 권역과 구·시를 전환할 수 있도록 정리했습니다."
             >
               <ul className="space-y-3 text-sm text-slate-300">
-                <li>- 권역 색상은 선택한 모드의 상대적 강도를 뜻합니다.</li>
-                <li>- 흐름선은 생활권과 권역 centroid를 잇는 개념도입니다.</li>
-                <li>- 15분 OD와 히트맵은 다음 단계에서 맵 모드 전환으로 확장할 수 있습니다.</li>
+                <li>- 기본은 구·시 기준입니다. 아직 sgg row가 비어 있으면 권역으로 안전하게 fallback 합니다.</li>
+                <li>- 권역은 기존 polygon 위치를 쓰고, 구·시는 fallback 배치로 먼저 읽기 좋게 배치합니다.</li>
+                <li>- 내일 live OD 재적재가 성공하면 같은 UI에서 곧바로 구·시 기준 결과가 나타납니다.</li>
               </ul>
             </SectionCard>
           </aside>
@@ -107,7 +164,7 @@ export function DashboardShell({
           <SectionCard
             eyebrow="Ridership"
             title="상일동역 승하차 추세"
-            subtitle="역 단위 live 데이터의 규모 변화는 지도 아래에서 별도로 읽습니다."
+            subtitle="역 단위 승하차 규모 변화는 아래 영역에서 별도로 봅니다."
           >
             <div className="space-y-6">
               <KpiCards kpis={overview.data.kpis} />
@@ -117,8 +174,8 @@ export function DashboardShell({
 
           <SectionCard
             eyebrow="Quality"
-            title="데이터 품질과 해석 범위"
-            subtitle="이 대시보드의 두 층위가 어떻게 다른지 제품 표면에서 숨기지 않습니다."
+            title="적재 상태와 해석 범위"
+            subtitle="DB 적재 범위와 현재 화면이 어떤 단위를 읽고 있는지 함께 보여줍니다."
           >
             <DataQualityPanel
               grainLabel={quality.meta.grainLabel}
@@ -132,42 +189,37 @@ export function DashboardShell({
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <SectionCard
             eyebrow="Temporal"
-            title="시간대 패턴"
-            subtitle="역 단위 시간대 데이터는 아직 보수적으로 분리해 두고, 현재 단계의 연결 범위를 명확히 보여줍니다."
+            title={`${granularityCopy[granularity].label} 기준 시간대 패턴`}
+            subtitle="15분 적재가 성공하면 이 패널도 같은 granularity를 따라갑니다."
           >
-            <HourlyProfile rows={hourly.data.rows} />
+            <HourlyProfile rows={active.hourly.data.rows} />
           </SectionCard>
 
           <SectionCard
             eyebrow="Reading guide"
-            title="실제 운영 해석"
-            subtitle="권역 맵에서 읽은 흐름을 업무/주거/배후권 관점으로 바로 번역합니다."
+            title="운영 해석 가이드"
+            subtitle="현재는 권역과 구·시를 같은 구조에서 전환하며, 품질 패널에서 적재 상태를 함께 확인합니다."
           >
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">업무권 이동</p>
-                <p className="mt-2 text-lg font-semibold text-white">{originToZone.data.rows[0]?.zoneName}</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">기본 단위</p>
+                <p className="mt-2 text-lg font-semibold text-white">{granularityCopy[granularity].label}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  생활권 outbound 기준으로 가장 큰 권역입니다. 직주 이동 해석의 시작점이 됩니다.
+                  현재 데이터가 준비된 가장 세밀한 단위를 먼저 보여주고, 필요할 때 권역 요약으로 압축합니다.
                 </p>
               </div>
               <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">근접 배후권</p>
-                <p className="mt-2 text-lg font-semibold text-white">
-                  {
-                    zoneToDestination.data.rows.find((row) => row.zoneName.includes("하남"))?.zoneName ??
-                    "하남·구리·남양주"
-                  }
-                </p>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">대표 대상지</p>
+                <p className="mt-2 text-lg font-semibold text-white">{active.originToZone.data.rows[0]?.zoneName ?? "-"}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  상일동 생활권과 인접 수도권 사이의 대중교통 수요를 읽는 핵심 구간입니다.
+                  기본 outbound 기준에서 비중이 가장 높은 대상지입니다. sgg 적재 후에는 훨씬 세밀해집니다.
                 </p>
               </div>
               <div className="rounded-[24px] border border-white/10 bg-black/18 p-4">
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-400">주의할 점</p>
-                <p className="mt-2 text-lg font-semibold text-white">역 OD가 아님</p>
+                <p className="mt-2 text-lg font-semibold text-white">역 OD 아님</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  OD는 생활권 기반이므로, 역-역 해석은 별도 원천 없이는 직접 만들지 않습니다.
+                  OD는 생활권 기반으로 해석하며, 역-역 OD로 오해하지 않도록 quality 패널과 설명을 함께 봅니다.
                 </p>
               </div>
             </div>

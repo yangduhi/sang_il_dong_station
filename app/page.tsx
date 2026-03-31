@@ -7,9 +7,7 @@ export default async function HomePage() {
   return (
     <DashboardShell
       overview={snapshot.overview}
-      hourly={snapshot.hourly}
-      originToZone={snapshot.originToZone}
-      zoneToDestination={snapshot.zoneToDestination}
+      granularities={snapshot.granularities}
       quality={snapshot.quality}
     />
   );
