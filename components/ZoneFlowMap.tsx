@@ -24,12 +24,12 @@ const modeCopy: Record<Mode, { label: string; accent: string; text: string }> = 
   outbound: {
     label: "유출",
     accent: "#2fe0b6",
-    text: "상일동 생활권에서 각 권역으로 이어지는 이동 흐름"
+    text: "상일동 생활권에서 각 대상지로 이어지는 이동 흐름"
   },
   inbound: {
     label: "유입",
     accent: "#f4c56a",
-    text: "각 권역에서 상일동 생활권으로 유입되는 이동 흐름"
+    text: "각 대상지에서 상일동 생활권으로 유입되는 이동 흐름"
   }
 };
 
@@ -198,12 +198,12 @@ export function ZoneFlowMap({
             <div className="rounded-[30px] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-md">
               <p className="text-xs uppercase tracking-[0.3em] text-[#86f3de]/70">Selected flow</p>
               <h3 className="font-display mt-3 text-[2rem] font-semibold text-white">
-                {selectedRow?.zoneName ?? "권역 선택"}
+                {selectedRow?.zoneName ?? "대상지 선택"}
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-300">
                 {selectedRow
                   ? `${scopeLabel} 기준 ${mode === "outbound" ? "유출" : "유입"} 흐름에서 대표 생활권은 ${selectedRow.topContextLabel} 입니다.`
-                  : "지도의 권역을 선택하면 대표 생활권과 비중을 자세히 볼 수 있습니다."}
+                  : "지도의 대상지를 선택하면 대표 생활권과 비중을 더 자세히 볼 수 있습니다."}
               </p>
 
               {selectedRow ? (
@@ -261,9 +261,9 @@ export function ZoneFlowMap({
             <div className="rounded-[30px] border border-white/10 bg-black/[0.12] p-5">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Layer notes</p>
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-                <li>권역 레이어는 생활권 레이어와 다른 fallback 위치를 생성하도록 준비했습니다.</li>
+                <li>권역 라벨이 아닌 구·시 라벨도 fallback 위치를 생성하도록 준비했습니다.</li>
                 <li>zone 데이터는 기존 polygon 위치를, sgg 데이터는 ring layout fallback을 사용합니다.</li>
-                <li>이후 sgg 적재가 들어오면 같은 레이아웃 컴포넌트에서 그대로 받을 수 있습니다.</li>
+                <li>이후 sgg 15분 적재가 들어오면 같은 레이아웃에서 그대로 확장됩니다.</li>
               </ul>
             </div>
           </aside>

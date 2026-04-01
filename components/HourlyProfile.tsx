@@ -11,9 +11,8 @@ export function HourlyProfile({ rows }: HourlyProfileProps) {
     return (
       <div className="space-y-4 rounded-[28px] border border-white/10 bg-black/20 p-5 text-sm text-slate-200">
         <p className="leading-7">
-          역 단위 시간대 승하차 live source는 아직 연결하지 않았습니다. 대신 현재 공개 source에서
-          검증된 것은 `상일동역 일별 승하차`와 `상일동 생활권(읍면동) 기준 OD`, 그리고
-          `생활권 OD 15분 endpoint` 입니다.
+          구·시 기준 15분 OD 적재는 아직 연결되지 않았습니다. 현재 공개 source에서 안정적으로 검증된 것은
+          상일동역 일별 승하차와 상일동 생활권 기준 daily OD 입니다.
         </p>
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
@@ -22,11 +21,11 @@ export function HourlyProfile({ rows }: HourlyProfileProps) {
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-400">OD granularity</p>
-            <p className="mt-2 text-base font-semibold text-white">생활권 / 읍면동</p>
+            <p className="mt-2 text-base font-semibold text-white">생활권 / 구·시</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Next iteration</p>
-            <p className="mt-2 text-base font-semibold text-white">15분 OD 패턴 맵</p>
+            <p className="mt-2 text-base font-semibold text-white">15분 OD 패턴</p>
           </div>
         </div>
       </div>
@@ -48,7 +47,7 @@ export function HourlyProfile({ rows }: HourlyProfileProps) {
               className="rounded-full bg-[linear-gradient(90deg,#163c5f,#3a9fff)] px-3 py-2 text-right text-xs font-semibold text-white"
               style={{ width: `${Math.max(8, (row.rideCount / max) * 100)}%` }}
             >
-              승차 {row.rideCount.toLocaleString()}
+              유출 {row.rideCount.toLocaleString()}
             </div>
           </div>
           <div className="rounded-full bg-white/[0.08]">
@@ -56,7 +55,7 @@ export function HourlyProfile({ rows }: HourlyProfileProps) {
               className="rounded-full bg-[linear-gradient(90deg,#6a2755,#ff7e96)] px-3 py-2 text-right text-xs font-semibold text-white"
               style={{ width: `${Math.max(8, (row.alightCount / max) * 100)}%` }}
             >
-              하차 {row.alightCount.toLocaleString()}
+              유입 {row.alightCount.toLocaleString()}
             </div>
           </div>
         </div>

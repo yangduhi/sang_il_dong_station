@@ -35,7 +35,7 @@ export const sangilStationScope = {
   scopeType: "station" as const,
   scopeLabel: "상일동역",
   focusAreaLabel: "서울특별시 강동구",
-  description: "서울 승하차 API에서 확인된 상일동역(5호선) 역 단위 승하차 추세입니다."
+  description: "서울 승하차 API에서 확인된 상일동역(5호선)의 역 단위 승하차 추세입니다."
 };
 
 export const zoneDefinitions: ZoneDefinition[] = [

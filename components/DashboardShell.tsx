@@ -38,14 +38,14 @@ const granularityCopy: Record<
   sgg: {
     label: "구·시",
     title: "구·시 단위 OD",
-    subtitle: "현재 데이터 grain과 가장 잘 맞는 서울 자치구 / 경기 시군 흐름을 보여줍니다.",
+    subtitle: "현재 공개 데이터 grain과 가장 잘 맞는 서울 자치구 / 경기 시군 기준 흐름입니다.",
     statusNote: "가장 세밀한 공개 granularity"
   },
   zone: {
     label: "권역",
     title: "권역 요약 OD",
-    subtitle: "넓은 방향성을 빠르게 읽기 위한 요약 레이어입니다.",
-    statusNote: "fallback 시에도 유지되는 안전한 요약 레이어"
+    subtitle: "넓은 방향성을 빠르게 읽기 위한 요약 시점입니다.",
+    statusNote: "fallback 또는 요약용 시점"
   }
 };
 
@@ -73,11 +73,9 @@ function statusTone(status: "good" | "warning" | "critical") {
   if (status === "good") {
     return "text-emerald-200";
   }
-
   if (status === "critical") {
     return "text-rose-200";
   }
-
   return "text-amber-100";
 }
 
@@ -92,8 +90,9 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
   const inboundLead = active.zoneToDestination.data.rows[0];
   const combinedLimitations = [...quality.data.warnings, ...quality.meta.limitations];
   const headerNote = sggReady
-    ? "기본 뷰는 구·시 단위입니다. 필요할 때만 권역 요약으로 압축해서 읽도록 설계했습니다."
-    : "구·시 단위 적재가 아직 비어 있어 권역 요약으로 안전하게 fallback 합니다. 데이터 적재가 완료되면 같은 화면에서 더 세밀한 결과로 전환됩니다.";
+    ? "기본 뷰는 구·시 단위입니다. 필요할 때만 권역 요약으로 압축해서 볼 수 있도록 설계했습니다."
+    : "구·시 단위 적재가 아직 비어 있어 권역 요약으로 안전하게 fallback 합니다. 데이터 적재가 완료되면 같은 화면에서 구·시 결과로 전환됩니다.";
+
   const signalMetrics = [
     {
       label: "승하차 기준",
@@ -116,6 +115,7 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
       note: `${quality.data.dataMode} / ${quality.data.sourceMode}`
     }
   ];
+
   const healthHighlights = quality.data.metrics.slice(0, 4);
 
   return (
@@ -146,7 +146,7 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
                 생활권 흐름을 한 화면에서 읽는 분석 데스크
               </h1>
               <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">
-                역 단위 승하차 추세와 생활권 기반 대중교통 OD를 하나의 읽기 순서로 정렬했습니다. 먼저 흐름을
+                역 단위 승하차 추세와 생활권 기반 대중교통 OD를 하나의 읽기 순서로 정리했습니다. 먼저 흐름을
                 보고, 그다음 적재 범위와 품질을 확인하고, 마지막으로 시간대 패턴과 해석 주의점을 검토할 수
                 있습니다.
               </p>
@@ -180,7 +180,7 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
 
             <div className="flex flex-col gap-3 xl:items-end">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-2 text-xs uppercase tracking-[0.24em] text-slate-300">
-                <span>최근 일자</span>
+                <span>최신 일자</span>
                 <span className="text-white">{latestTrend?.serviceDate ?? "-"}</span>
               </div>
               <div className="rounded-full border border-white/10 bg-black/20 p-1">
@@ -221,7 +221,7 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
         <div data-reveal="2" className="grid gap-6 xl:grid-cols-[1fr_1fr_0.9fr]">
           <SectionCard
             eyebrow="Outbound"
-            title="주요 도착 권역"
+            title="주요 도착 대상지"
             subtitle={`${activeGranularity.label} 기준으로 상일동 생활권에서 바깥으로 나갈 때 비중이 높은 목적지입니다.`}
           >
             <OdBarChart rows={active.originToZone.data.rows.slice(0, 6)} directionLabel={`origin-${granularity}`} />
@@ -229,7 +229,7 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
 
           <SectionCard
             eyebrow="Inbound"
-            title="주요 유입 권역"
+            title="주요 유입 대상지"
             subtitle={`${activeGranularity.label} 기준으로 외부에서 상일동 생활권으로 들어오는 비중이 높은 출발지입니다.`}
           >
             <OdBarChart rows={active.zoneToDestination.data.rows.slice(0, 6)} directionLabel={`inbound-${granularity}`} />
@@ -238,25 +238,25 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
           <SectionCard
             eyebrow="Operator notes"
             title="운영 메모"
-            subtitle="해석 범위와 fallback 동작을 상단에서 숨기지 않고 함께 표시합니다."
+            subtitle="해석 범위와 fallback 동작을 상단 지도와 함께 빠르게 읽을 수 있도록 정리했습니다."
           >
             <div className="space-y-5">
               <div className="rounded-[24px] border border-white/10 bg-black/[0.16] px-4 py-4">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Leading outbound</p>
                 <p className="font-display mt-2 text-2xl font-semibold text-white">{outboundLead?.zoneName ?? "-"}</p>
-                <p className="mt-2 text-sm text-slate-400">{outboundLead?.topContextLabel ?? "표시할 데이터 없음"}</p>
+                <p className="mt-2 text-sm text-slate-400">{outboundLead?.topContextLabel ?? "표시할 데이터가 없습니다"}</p>
               </div>
 
               <div className="rounded-[24px] border border-white/10 bg-black/[0.16] px-4 py-4">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Leading inbound</p>
                 <p className="font-display mt-2 text-2xl font-semibold text-white">{inboundLead?.zoneName ?? "-"}</p>
-                <p className="mt-2 text-sm text-slate-400">{inboundLead?.topContextLabel ?? "표시할 데이터 없음"}</p>
+                <p className="mt-2 text-sm text-slate-400">{inboundLead?.topContextLabel ?? "표시할 데이터가 없습니다"}</p>
               </div>
 
               <ul className="space-y-3 text-sm leading-6 text-slate-300">
-                <li>- 구·시 적재가 비어 있으면 권역 요약으로 즉시 fallback 하며, 화면 구조는 바뀌지 않습니다.</li>
-                <li>- 승하차는 역 단위, OD는 생활권 단위이므로 같은 수치처럼 비교하지 않고 읽어야 합니다.</li>
-                <li>- 미매칭이나 freshness 이슈는 품질 패널과 limitations 에서 계속 노출합니다.</li>
+                <li>- 구·시 적재가 비어 있으면 권역 요약으로 즉시 fallback 하고, 화면 구조는 바뀌지 않습니다.</li>
+                <li>- 승하차는 역 단위, OD는 생활권 단위이므로 같은 수치처럼 비교하지 않도록 읽어야 합니다.</li>
+                <li>- 품질, freshness, limitations는 항상 별도 패널에서 함께 노출합니다.</li>
               </ul>
             </div>
           </SectionCard>
@@ -266,7 +266,7 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
           <SectionCard
             eyebrow="Ridership"
             title="상일동역 승하차 추세"
-            subtitle="역 단위 승하차 규모는 생활권 OD와 분리된 축으로 보여 주어 해석 충돌을 줄입니다."
+            subtitle="역 단위 승하차 규모와 생활권 OD를 서로 다른 축으로 보여줍니다."
           >
             <div className="space-y-6">
               <KpiCards kpis={overview.data.kpis} />
@@ -277,7 +277,7 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
           <SectionCard
             eyebrow="Quality"
             title="적재 상태와 해석 범위"
-            subtitle="현재 데이터 모드, source mode, freshness, 그리고 알려진 제약을 계약대로 함께 노출합니다."
+            subtitle="현재 데이터 모드, source mode, freshness, 그리고 드러난 제약을 함께 확인할 수 있습니다."
           >
             <DataQualityPanel
               grainLabel={quality.meta.grainLabel}
@@ -292,7 +292,7 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
           <SectionCard
             eyebrow="Temporal"
             title={`${activeGranularity.label} 기준 시간대 패턴`}
-            subtitle="15분 적재가 연결되면 같은 granularity와 동일한 읽기 구조를 유지한 채 확장됩니다."
+            subtitle="15분 적재가 연결되면 같은 granularity를 기준으로 이 패널도 함께 채워집니다."
           >
             <HourlyProfile rows={active.hourly.data.rows} />
           </SectionCard>
@@ -300,22 +300,22 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
           <SectionCard
             eyebrow="Reading guide"
             title="운영 해석 가이드"
-            subtitle="숫자만 훑어도 이 화면이 어떤 단위를 보고 있는지 바로 이해할 수 있도록 정리했습니다."
+            subtitle="숫자를 보기 전에 지금 어떤 단위를 읽고 있는지 먼저 이해하도록 정리했습니다."
           >
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-[24px] border border-white/10 bg-black/[0.16] p-4">
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">기본 단위</p>
                 <p className="font-display mt-3 text-2xl font-semibold text-white">{activeGranularity.label}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  준비된 granularity 를 먼저 보여 주고, 필요할 때만 권역 요약으로 압축합니다.
+                  준비된 granularity를 먼저 보여 주고, 필요할 때만 권역 요약으로 압축합니다.
                 </p>
               </div>
 
               <div className="rounded-[24px] border border-white/10 bg-black/[0.16] p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">핵심 목적지</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">대표 목적지</p>
                 <p className="font-display mt-3 text-2xl font-semibold text-white">{outboundLead?.zoneName ?? "-"}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  현재 outbound 기준에서 가장 큰 흐름입니다. Map 패널에서 바로 선택해 세부 흐름을 볼 수 있습니다.
+                  현재 outbound 기준에서 가장 비중이 높은 흐름입니다. 지도와 패널을 함께 읽으면 맥락이 더 분명합니다.
                 </p>
               </div>
 
@@ -323,7 +323,7 @@ export function DashboardShell({ overview, granularities, quality }: DashboardSh
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">주의할 점</p>
                 <p className="font-display mt-3 text-2xl font-semibold text-white">역 OD 아님</p>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  OD는 생활권 기준이므로 역-역 통행으로 오해하지 않도록 품질 패널과 함께 읽어야 합니다.
+                  OD는 생활권 기준이므로 역-역 통행처럼 오해하지 않도록 항상 설명과 함께 읽어야 합니다.
                 </p>
               </div>
             </div>
