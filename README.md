@@ -107,7 +107,13 @@ Attempt a fresh OD capture before loading:
 Attempt both daily and 15-minute OD capture:
 
 ```powershell
-.\.venv\Scripts\python.exe -m etl.jobs.load_dashboard_postgres --refresh-live-od --refresh-live-15min --top-n 4 --hours 6,7,8,17,18,19
+.\.venv\Scripts\python.exe -m etl.jobs.load_dashboard_postgres --refresh-live-od --refresh-live-15min --top-n 2 --hours 7,8,18,19
+```
+
+If quota remains after the safe default batch succeeds, run one optional expanded pass:
+
+```powershell
+.\.venv\Scripts\python.exe -m etl.jobs.load_dashboard_postgres --refresh-live-15min --top-n 4 --hours 6,7,8,17,18,19
 ```
 
 In `postgres` mode, the dashboard reads only:
@@ -160,7 +166,9 @@ work_instruction/       source specification package, reference only
 - station ridership live verification: completed
 - living-zone OD endpoint verification: completed
 - request-time OD API dependency in postgres mode: removed
-- local DB connectivity: depends on a working `DATABASE_URL` / pooler URL in the current network
+- production pooler strategy: transaction pooler (`6543`) verified for Vercel serverless
+- daily sgg materialization: completed and visible in production
+- 15-minute OD materialization: not yet completed, currently quota-limited
 
 ## More detail
 

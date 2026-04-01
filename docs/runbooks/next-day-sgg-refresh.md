@@ -68,13 +68,14 @@ What should change:
 - `15min sgg rows` > `0` if the 15-minute capture succeeded
 - `grainLabel` should show `living_zone_od_daily:sgg` on OD endpoints
 
-## Step 5. UI follow-up
+## Step 5. UI confirmation
 
-Once SGG rows are present, the next UI step is:
+Once SGG rows are present, confirm the existing UI behaves as intended:
 
-- add a visible `권역 / 구·시` toggle
-- default map stays `권역`
-- `구·시` uses the same component path with dynamic fallback positions
+- the default map view stays on `구·시`
+- `권역` remains available as a summary toggle
+- quality panel shows `OD sgg rows > 0`
+- temporal panel only changes if `15min sgg rows > 0`
 
 ## Failure handling
 

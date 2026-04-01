@@ -126,4 +126,6 @@ When `APP_DATA_MODE=local`:
 - ETL loader: implemented
 - Postgres repository queries: implemented
 - runtime direct OD fetch in postgres mode: removed
-- local DB verification: blocked by current workstation DB connectivity
+- production connection strategy: transaction pooler (`6543`) verified for Vercel serverless
+- daily `sgg` materialization: completed
+- 15-minute `sgg` materialization: still quota-limited
