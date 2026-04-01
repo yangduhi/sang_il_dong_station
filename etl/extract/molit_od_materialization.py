@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
+import json
 
 import httpx
 
@@ -130,6 +132,11 @@ def fetch_molit_items(
             },
             timeout_seconds=timeout_seconds,
         )
+        if "Error" in payload:
+            error = payload["Error"]
+            if error.get("code") == "50" or error.get("message") == "NO_DATA_FOUND":
+                return rows
+            raise RuntimeError(f"Unexpected OD payload shape: {payload}")
         if "Response" not in payload:
             raise RuntimeError(f"Unexpected OD payload shape: {payload}")
 
@@ -173,10 +180,20 @@ def find_available_service_date() -> str:
             )
         except Exception:
             continue
-        if "Response" in payload:
+        response = payload.get("Response", {})
+        header = response.get("header", {})
+        body = response.get("body", {})
+        if header.get("resultCode") == "200" and int(body.get("totalCount", 0) or 0) > 0:
             return service_date
 
-    raise RuntimeError("No accessible OD service date was found within the probe window.")
+    snapshot_path = get_settings().verified_snapshot_path / "origin-to-zone.json"
+    if snapshot_path.exists():
+      snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+      snapshot_date = snapshot.get("data", {}).get("dateRange", {}).get("to", "")
+      if snapshot_date:
+          return snapshot_date.replace("-", "")
+
+    return "20250301"
 
 
 def _context_label(item: dict[str, Any], direction: str) -> str:
@@ -357,55 +374,59 @@ def capture_15min_materialization(
     target_member_codes: dict[str, set[str]] = {"outbound": set(), "inbound": set()}
     for direction in ("outbound", "inbound"):
         direction_rows = [row for row in daily_rows if row["direction"] == direction]
-        top_zone_ids = {
-            row["targetZoneId"]
-            for row in direction_rows
-            if row["aggregationLevel"] == "zone"
-        }
-        top_zone_ids = set(list(top_zone_ids)[:top_n])
         top_sgg_codes = [
             row["targetSggCd"]
             for row in direction_rows
             if row["aggregationLevel"] == "sgg"
         ][:top_n]
 
-        for member in REGION_MEMBERS:
-            if member.zone_id in top_zone_ids or member.sgg_cd in top_sgg_codes:
-                target_member_codes[direction].add(member.sgg_cd)
+        for sgg_code in top_sgg_codes:
+            if sgg_code:
+                target_member_codes[direction].add(sgg_code)
 
     hourly_buckets: dict[tuple[str, str, str, str], int] = defaultdict(int)
+    tasks: list[tuple[str, RegionMember, int, str]] = []
     for direction, member_codes in target_member_codes.items():
         for sgg_code in member_codes:
             member = REGION_BY_SGG[sgg_code]
             for hour in tracked_hours:
                 for quarter in ("00", "15", "30", "45"):
-                    items = fetch_molit_items(
-                        MOLIT_15MIN_SOURCE,
-                        {
-                            "opr_ymd": service_date.replace("-", ""),
-                            "dptre_ctpv_cd": FOCUS_CTPV_CD if direction == "outbound" else member.ctpv_cd,
-                            "dptre_sgg_cd": FOCUS_SGG_CD if direction == "outbound" else member.sgg_cd,
-                            "arvl_ctpv_cd": member.ctpv_cd if direction == "outbound" else FOCUS_CTPV_CD,
-                            "arvl_sgg_cd": member.sgg_cd if direction == "outbound" else FOCUS_SGG_CD,
-                            "tzon": f"{hour:02d}",
-                            "qtrp": quarter,
-                        },
-                        timeout_seconds=25.0,
-                    )
-                    scoped = [
-                        item for item in items
-                        if (
-                            item.get("dptre_emd_nm") == FOCUS_EMD_NAME
-                            if direction == "outbound"
-                            else item.get("arvl_emd_nm") == FOCUS_EMD_NAME
-                        )
-                    ]
-                    if not scoped:
-                        continue
-                    passenger_count = sum(int(item.get("pasg_cnt", 0) or 0) for item in scoped)
-                    hour_bucket = f"{hour:02d}:00"
-                    hourly_buckets[(direction, "zone", member.zone_id, hour_bucket)] += passenger_count
-                    hourly_buckets[(direction, "sgg", member.sgg_cd, hour_bucket)] += passenger_count
+                    tasks.append((direction, member, hour, quarter))
+
+    def fetch_task(task: tuple[str, RegionMember, int, str]) -> tuple[str, RegionMember, str, int]:
+        direction, member, hour, quarter = task
+        items = fetch_molit_items(
+            MOLIT_15MIN_SOURCE,
+            {
+                "opr_ymd": service_date.replace("-", ""),
+                "dptre_ctpv_cd": FOCUS_CTPV_CD if direction == "outbound" else member.ctpv_cd,
+                "dptre_sgg_cd": FOCUS_SGG_CD if direction == "outbound" else member.sgg_cd,
+                "arvl_ctpv_cd": member.ctpv_cd if direction == "outbound" else FOCUS_CTPV_CD,
+                "arvl_sgg_cd": member.sgg_cd if direction == "outbound" else FOCUS_SGG_CD,
+                "tzon": f"{hour:02d}",
+                "qtrp": quarter,
+            },
+            timeout_seconds=25.0,
+        )
+        scoped = [
+            item for item in items
+            if (
+                item.get("dptre_emd_nm") == FOCUS_EMD_NAME
+                if direction == "outbound"
+                else item.get("arvl_emd_nm") == FOCUS_EMD_NAME
+            )
+        ]
+        passenger_count = sum(int(item.get("pasg_cnt", 0) or 0) for item in scoped)
+        return direction, member, f"{hour:02d}:00", passenger_count
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(fetch_task, task) for task in tasks]
+        for future in as_completed(futures):
+            direction, member, hour_bucket, passenger_count = future.result()
+            if passenger_count <= 0:
+                continue
+            hourly_buckets[(direction, "zone", member.zone_id, hour_bucket)] += passenger_count
+            hourly_buckets[(direction, "sgg", member.sgg_cd, hour_bucket)] += passenger_count
 
     rows: list[dict[str, Any]] = []
     for (direction, aggregation_level, target_id, hour_bucket), passenger_count in sorted(hourly_buckets.items()):

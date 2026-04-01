@@ -1,18 +1,20 @@
 {
-  "runId": "dashboard-postgres-etl-20260331133611",
-  "executedAt": "2026-03-31T13:36:11.548024+00:00",
+  "runId": "dashboard-postgres-etl-20260401010610",
+  "executedAt": "2026-04-01T01:06:10.953092+00:00",
   "rows": {
-    "stationDaily": 14,
+    "stationDaily": 13,
     "livingZoneOdDaily": 26,
     "livingZoneOd15min": 0,
-    "rowsLoaded": 40
+    "rowsLoaded": 39
   },
   "status": "succeeded",
   "batchStrategy": {
     "daily": "Refresh station_daily plus living_zone_od_daily for both zone and sgg aggregation levels in one batch. Dashboard reads the latest materialized facts only.",
     "fifteenMinute": "Optional batch. Capture only top daily zone/sgg destinations and only tracked commute hours to stay below OD API quota."
   },
-  "warnings": [],
+  "warnings": [
+    "15-minute OD live refresh failed; keeping prior materialized rows. (Client error '429 Too Many Requests' for url 'https://apis.data.go.kr/1613000/ODUsageforGeneralBusesandUrbanRailways/getGeneralBusandUrbanRailwaysODUsageby15MinuteIntervals?serviceKey=ad965e2095ac077430333795a88b30b58101a9e7845156e79dd1008d3c49fc77&pageNo=1&numOfRows=100&dataType=json&opr_ymd=20250301&dptre_ctpv_cd=11&dptre_sgg_cd=11740&arvl_ctpv_cd=11&arvl_sgg_cd=11740&tzon=06&qtrp=45'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429)"
+  ],
   "evidencePaths": [
     "D:\\vscode\\sang_il_dong_station\\data\\verified_snapshots\\origin-to-zone.json",
     "D:\\vscode\\sang_il_dong_station\\data\\verified_snapshots\\zone-to-destination.json",

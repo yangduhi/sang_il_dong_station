@@ -78,7 +78,7 @@
         "zoneName": "안양·군포·의왕·과천·광명·부천",
         "passengerCount": 37,
         "sharePct": 0.3,
-        "topContextLabel": "과천시 중앙동"
+        "topContextLabel": "광명시 광명동"
       },
       {
         "zoneName": "용인·수원·화성·오산·평택·안성",
@@ -95,29 +95,29 @@
       {
         "zoneName": "시흥·안산",
         "passengerCount": 3,
-        "sharePct": 0,
+        "sharePct": 0.0,
         "topContextLabel": "시흥시 정왕동"
       }
     ]
   },
   "meta": {
     "sourceNames": [
-      "verified-live-snapshot",
       "getDailyODUsageforGeneralBusesandUrbanRailways"
     ],
     "grainLabel": "emd_based_public_transit_od",
-    "lastLoadedAt": "20250301",
+    "lastLoadedAt": "2026-04-01T00:47:05.916092+00:00",
     "dateRange": {
       "from": "2025-03-01",
       "to": "2025-03-01"
     },
     "limitations": [
       "공개 OD API는 상일동역 역-역 이동이 아니라 상일동(읍면동) 생활권 기준 대중교통 OD입니다.",
-      "현재 런타임 source가 빈 row를 반환할 경우, 로컬에서 검증된 실제 live 스냅샷을 fallback으로 사용합니다."
+      "OD에는 일반버스와 도시철도가 함께 포함됩니다."
     ],
     "queryEcho": {
-      "stationName": "상일동역"
+      "direction": "inbound",
+      "focusArea": "서울특별시 강동구 상일동"
     },
-    "fallbackUsed": true
+    "fallbackUsed": false
   }
 }

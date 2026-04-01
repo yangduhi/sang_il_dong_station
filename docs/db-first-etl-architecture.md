@@ -91,11 +91,14 @@ Do **not** attempt a full all-zones all-hours capture on every run.
 
 Recommended bounded strategy:
 
-- identify top daily zones first
-- capture only `top N` zones
+- identify top daily `sgg` rows first
+- capture only `top N` sgg targets
 - capture only tracked commute hours
-  - default: `06,07,08,17,18,19`
+  - safe default: `07,08,18,19`
+  - expanded pass: `06,07,08,17,18,19`
 - capture quarter buckets within those hours only
+
+Zone 15-minute rows should be rolled up from the captured top-sgg set instead of fetching every member of every zone.
 
 This keeps the request volume inside the daily quota envelope.
 

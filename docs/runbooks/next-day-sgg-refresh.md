@@ -37,7 +37,7 @@ Expected result:
 ## Step 3. Refresh 15-minute OD for both zone and sgg
 
 ```powershell
-.\.venv\Scripts\python.exe -m etl.jobs.load_dashboard_postgres --refresh-live-od --refresh-live-15min --top-n 4 --hours 6,7,8,17,18,19
+.\.venv\Scripts\python.exe -m etl.jobs.load_dashboard_postgres --refresh-live-od --refresh-live-15min --top-n 2 --hours 7,8,18,19
 ```
 
 Expected result:
@@ -45,6 +45,13 @@ Expected result:
 - writes `living-zone-15min-materialization.json`
 - loads `aggregation_level='zone'` 15-minute rows
 - loads `aggregation_level='sgg'` 15-minute rows
+- capture scope is bounded by top `sgg` targets, and zone rows are rolled up from the same captured set
+
+If that succeeds and quota still remains, expand in a second pass:
+
+```powershell
+.\.venv\Scripts\python.exe -m etl.jobs.load_dashboard_postgres --refresh-live-15min --top-n 4 --hours 6,7,8,17,18,19
+```
 
 ## Step 4. Validate row counts
 

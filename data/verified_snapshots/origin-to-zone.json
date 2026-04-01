@@ -41,13 +41,13 @@
       {
         "zoneName": "하남·구리·남양주",
         "passengerCount": 1702,
-        "sharePct": 11.9,
+        "sharePct": 11.8,
         "topContextLabel": "하남시 망월동"
       },
       {
         "zoneName": "강남·서초",
         "passengerCount": 985,
-        "sharePct": 6.9,
+        "sharePct": 6.8,
         "topContextLabel": "강남구 역삼동"
       },
       {
@@ -59,7 +59,7 @@
       {
         "zoneName": "서북",
         "passengerCount": 427,
-        "sharePct": 3,
+        "sharePct": 3.0,
         "topContextLabel": "마포구 동교동"
       },
       {
@@ -67,6 +67,12 @@
         "passengerCount": 128,
         "sharePct": 0.9,
         "topContextLabel": "광주시 송정동"
+      },
+      {
+        "zoneName": "의정부·양주·동두천·포천·연천·가평",
+        "passengerCount": 38,
+        "sharePct": 0.3,
+        "topContextLabel": "의정부시 의정부동"
       },
       {
         "zoneName": "안양·군포·의왕·과천·광명·부천",
@@ -87,37 +93,31 @@
         "topContextLabel": "파주시 금촌동"
       },
       {
-        "zoneName": "의정부·양주·동두천·포천·연천·가평",
-        "passengerCount": 11,
-        "sharePct": 0.1,
-        "topContextLabel": "가평군 청평면"
-      },
-      {
         "zoneName": "시흥·안산",
         "passengerCount": 3,
-        "sharePct": 0,
+        "sharePct": 0.0,
         "topContextLabel": "시흥시 정왕동"
       }
     ]
   },
   "meta": {
     "sourceNames": [
-      "verified-live-snapshot",
       "getDailyODUsageforGeneralBusesandUrbanRailways"
     ],
     "grainLabel": "emd_based_public_transit_od",
-    "lastLoadedAt": "20250301",
+    "lastLoadedAt": "2026-04-01T00:47:05.916092+00:00",
     "dateRange": {
       "from": "2025-03-01",
       "to": "2025-03-01"
     },
     "limitations": [
       "공개 OD API는 상일동역 역-역 이동이 아니라 상일동(읍면동) 생활권 기준 대중교통 OD입니다.",
-      "현재 런타임 source가 빈 row를 반환할 경우, 로컬에서 검증된 실제 live 스냅샷을 fallback으로 사용합니다."
+      "OD에는 일반버스와 도시철도가 함께 포함됩니다."
     ],
     "queryEcho": {
-      "stationName": "상일동역"
+      "direction": "outbound",
+      "focusArea": "서울특별시 강동구 상일동"
     },
-    "fallbackUsed": true
+    "fallbackUsed": false
   }
 }

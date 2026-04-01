@@ -34,10 +34,10 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Load Sangil dashboard facts into Postgres.")
     parser.add_argument("--refresh-live-od", action="store_true", help="Attempt to refresh daily OD snapshots from the public API.")
     parser.add_argument("--refresh-live-15min", action="store_true", help="Attempt to capture 15-minute OD snapshots for top daily zones.")
-    parser.add_argument("--top-n", type=int, default=4, help="Top N daily zones to expand into 15-minute snapshots.")
+    parser.add_argument("--top-n", type=int, default=2, help="Top N daily sgg targets to expand into 15-minute snapshots.")
     parser.add_argument(
         "--hours",
-        default="6,7,8,17,18,19",
+        default="7,8,18,19",
         help="Comma-separated hour list for the 15-minute capture job.",
     )
     return parser
